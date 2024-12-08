@@ -46,14 +46,7 @@ public class MenuItemService {
                         .findById(request.getCategoryId())
                         .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
 
-        try {
-            menuItem = menuItemRepository.save(menuItem);
-        }
-        catch (DataIntegrityViolationException exception) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-
-        return menuItemMapper.toMenuItemResponse(menuItem);
+        return menuItemMapper.toMenuItemResponse(menuItemRepository.save(menuItem));
     }
 
     public MenuItemResponse updateMenuItem(Integer itemId, MenuItemRequest request) {
