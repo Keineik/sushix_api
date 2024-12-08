@@ -1,19 +1,11 @@
 package com.group09.sushix_api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
-import lombok.AccessLevel;
 
 @Entity
+@Table(name = "MenuCategory")
 @Getter
 @Setter
 @Builder
@@ -21,9 +13,12 @@ import lombok.AccessLevel;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MenuCategory {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CategoryID")
-    private Integer id;
-    private String categoryName;
+    Integer categoryId;
+
+    @Column(name = "CategoryName", nullable = false, length = 100)
+    String categoryName;
 }

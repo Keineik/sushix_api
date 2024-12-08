@@ -16,7 +16,7 @@ public class MenuCategoryService {
     MenuCategoryRepository menuCategoryRepository;
     MenuCategoryMapper menuCategoryMapper;
 
-    public List<MenuCategoryResponse> getMenuCategories() {
+    public List<MenuCategoryResponse> getAllMenuCategories() {
         return menuCategoryRepository
                 .findAll()
                 .stream()

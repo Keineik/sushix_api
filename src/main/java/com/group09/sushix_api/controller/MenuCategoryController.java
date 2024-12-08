@@ -24,7 +24,7 @@ public class MenuCategoryController {
     @GetMapping
     ApiResponse<List<MenuCategoryResponse>> getMenuCategories() {
         return ApiResponse.<List<MenuCategoryResponse>>builder()
-                .result(menuCategoryService.getMenuCategories())
+                .result(menuCategoryService.getAllMenuCategories())
                 .build();
     }
 }

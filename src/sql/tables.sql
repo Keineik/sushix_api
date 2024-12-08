@@ -78,7 +78,7 @@ CREATE TABLE MenuCategory (
 CREATE TABLE MenuItem (
     ItemID INT IDENTITY(1,1) PRIMARY KEY,
     ItemName NVARCHAR(100) NOT NULL,
-    UnitPrice DECIMAL(10,2),
+    UnitPrice DECIMAL(10,2) CHECK (UnitPrice >= 0),
     ServingUnit NVARCHAR(10),
     CategoryID INT,
     IsDiscontinued BIT,
