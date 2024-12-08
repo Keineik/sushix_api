@@ -1,10 +1,8 @@
 package com.group09.sushix_api.controller;
 
 import com.group09.sushix_api.dto.request.MenuCategoryRequest;
-import com.group09.sushix_api.dto.request.MenuItemRequest;
 import com.group09.sushix_api.dto.response.ApiResponse;
 import com.group09.sushix_api.dto.response.MenuCategoryResponse;
-import com.group09.sushix_api.dto.response.MenuItemResponse;
 import com.group09.sushix_api.service.MenuCategoryService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;

@@ -2,10 +2,8 @@ package com.group09.sushix_api.mapper;
 
 import com.group09.sushix_api.dto.request.BranchRequest;
 import com.group09.sushix_api.dto.response.BranchResponse;
-import com.group09.sushix_api.dto.response.MenuItemResponse;
 import com.group09.sushix_api.entity.Branch;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
