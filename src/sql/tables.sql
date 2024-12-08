@@ -83,12 +83,14 @@ CREATE TABLE MenuItem (
     CategoryID INT,
     IsDiscontinued BIT,
 	ImgUrl NVARCHAR(2083),
+
     CONSTRAINT FK_MenuItem_MenuCategory FOREIGN KEY (CategoryID) REFERENCES MenuCategory(CategoryID)
 );
 
 CREATE TABLE MenuCombo (
     ComboID INT IDENTITY(1,1) PRIMARY KEY,
     ComponentID INT,
+
 	CONSTRAINT FK_MenuCombo_MenuItem1 FOREIGN KEY (ComboID) REFERENCES MenuItem(ItemID),
     CONSTRAINT FK_MenuCombo_MenuItem2 FOREIGN KEY (ComponentID) REFERENCES MenuItem(ItemID)
 );
@@ -106,13 +108,73 @@ CREATE TABLE Branch (
 	ImgUrl NVARCHAR(2083)
 );
 
-CREATE TABLE BranchMenuItem (	
+CREATE TABLE Department (
+	DeptID INT IDENTITY(1,1) PRIMARY KEY,
+	BranchID INT,
+    DeptName VARCHAR(10) CHECK (DeptName IN ('Kitchen', 'Reception', 'Waiter', 'Cashier', 'Manager')),
+    Salary DECIMAL(10,2),
+
+	CONSTRAINT UQ_BranchID_DeptName UNIQUE (BranchID, DeptName)
+);
+
+CREATE TABLE BranchMenuItem (
     BranchID INT,
     ItemID INT,
     IsShippable BIT,
+
     CONSTRAINT PK_BranchMenuItem PRIMARY KEY (BranchID, ItemID),
     CONSTRAINT FK_BranchMenuItem_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
     CONSTRAINT FK_BranchMenuItem_MenuItem FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID)
+);
+
+CREATE TABLE Staff (
+    StaffID INT IDENTITY(1,1) PRIMARY KEY,
+    StaffName VARCHAR(100) NOT NULL,
+    StaffDOB DATE,
+    StaffGender CHAR(1) CHECK (StaffGender IN ('M', 'F')),
+    DeptName VARCHAR(10),
+    BranchID INT,
+
+    CONSTRAINT FK_Staff_Department FOREIGN KEY (BranchID, DeptName) REFERENCES Department(BranchID, DeptName)
+);
+
+CREATE TABLE Customer (
+    CustID INT IDENTITY(1,1) PRIMARY KEY,
+    CustName VARCHAR(255) NOT NULL,
+    CustEmail VARCHAR(255),
+    CustGender CHAR(1) CHECK (CustGender IN ('M', 'F')),
+    CustPhoneNumber VARCHAR(20),
+    CustCitizenID VARCHAR(20) UNIQUE
+);
+
+CREATE TABLE CardType (
+    CardTypeID INT IDENTITY(1,1) PRIMARY KEY,
+    CardName VARCHAR(10) NOT NULL,
+    DiscountRate DECIMAL(5,2) CHECK (DiscountRate BETWEEN 0 AND 100),
+    PointsRequiredForRenewal INT CHECK (PointsRequiredForRenewal >= 0),
+    PointsRequiredForUpgrade INT CHECK (PointsRequiredForUpgrade >= 0)
+);
+	
+CREATE TABLE MembershipCard (
+    CardID INT IDENTITY(1,1) PRIMARY KEY,
+    IssuedDate DATE DEFAULT GETDATE(),
+    CardType INT NOT NULL,
+    CustID INT NOT NULL,
+
+    CONSTRAINT FK_MembershipCard_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
+    CONSTRAINT FK_MembershipCard_CardType FOREIGN KEY (CardType) REFERENCES CardType(CardTypeID)
+);
+
+CREATE TABLE Account (
+    AccountID INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(100) NOT NULL UNIQUE,
+    [Password] NVARCHAR(255) NOT NULL,
+    CustomerID INT DEFAULT NULL,
+    StaffID INT DEFAULT NULL,
+	IsAdmin BIT NOT NULL,
+
+    CONSTRAINT FK_Account_Customer FOREIGN KEY (CustomerID) REFERENCES Customer(CustID),
+    CONSTRAINT FK_Account_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
 );
 
 -- ******************************************************
@@ -165,3 +227,16 @@ PRINT 'Loading BranchMenuItem';
 INSERT INTO BranchMenuItem
 SELECT b.BranchID, mi.ItemID, 1
 FROM Branch b, MenuItem mi
+
+PRINT 'Loading CardType';
+BULK INSERT CardType FROM '$(DataPath)CardType.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);

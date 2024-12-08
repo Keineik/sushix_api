@@ -10,10 +10,8 @@ import com.group09.sushix_api.repository.MenuCategoryRepository;
 import com.group09.sushix_api.repository.MenuItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.awt.*;
 import java.util.List;
 
 @Service

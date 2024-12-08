@@ -2,7 +2,6 @@ package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.MenuCategoryRequest;
 import com.group09.sushix_api.dto.response.MenuCategoryResponse;
-import com.group09.sushix_api.dto.response.MenuItemResponse;
 import com.group09.sushix_api.entity.MenuCategory;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
@@ -10,7 +9,6 @@ import com.group09.sushix_api.mapper.MenuCategoryMapper;
 import com.group09.sushix_api.repository.MenuCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

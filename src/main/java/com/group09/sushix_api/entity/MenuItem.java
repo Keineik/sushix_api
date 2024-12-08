@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MenuItem {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ItemID")
@@ -30,7 +29,7 @@ public class MenuItem {
     @Column(name = "ServingUnit", length = 10)
     String servingUnit;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CategoryID", referencedColumnName = "CategoryID")
     MenuCategory categoryId;
 
