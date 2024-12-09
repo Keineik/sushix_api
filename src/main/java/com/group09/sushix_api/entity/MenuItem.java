@@ -23,7 +23,7 @@ public class MenuItem {
     @Column(name = "ItemName", nullable = false, length = 100)
     String itemName;
 
-    @Column(name = "UnitPrice", precision = 10, scale = 2)
+    @Column(name = "UnitPrice", precision = 19, scale = 4)
     BigDecimal unitPrice;
 
     @Column(name = "ServingUnit", length = 10)

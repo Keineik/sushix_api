@@ -78,7 +78,7 @@ CREATE TABLE MenuCategory (
 CREATE TABLE MenuItem (
     ItemID INT IDENTITY(1,1) PRIMARY KEY,
     ItemName NVARCHAR(100) NOT NULL,
-    UnitPrice DECIMAL(10,2) CHECK (UnitPrice >= 0),
+    UnitPrice DECIMAL(19,4) CHECK (UnitPrice >= 0),
     ServingUnit NVARCHAR(10),
     CategoryID INT,
     IsDiscontinued BIT,
@@ -112,7 +112,7 @@ CREATE TABLE Department (
 	DeptID INT IDENTITY(1,1) PRIMARY KEY,
 	BranchID INT,
     DeptName VARCHAR(10) CHECK (DeptName IN ('Kitchen', 'Reception', 'Waiter', 'Cashier', 'Manager')),
-    Salary DECIMAL(10,2),
+    Salary DECIMAL(19,4),
 
 	CONSTRAINT UQ_BranchID_DeptName UNIQUE (BranchID, DeptName)
 );
@@ -134,6 +134,7 @@ CREATE TABLE Staff (
     StaffGender CHAR(1) CHECK (StaffGender IN ('M', 'F')),
     DeptName VARCHAR(10),
     BranchID INT,
+	isBranchManager BIT DEFAULT 0,
 
     CONSTRAINT FK_Staff_Department FOREIGN KEY (BranchID, DeptName) REFERENCES Department(BranchID, DeptName)
 );
@@ -184,6 +185,8 @@ PRINT '';
 PRINT '*** Loading Data';
 GO
 
+-- ******************************************************
+
 PRINT 'Loading MenuCategory';
 BULK INSERT MenuCategory FROM '$(DataPath)MenuCategory.csv'
 WITH (
@@ -196,6 +199,8 @@ WITH (
 	FIRSTROW = 2,
 	FORMAT = 'CSV'
 );
+
+-- ******************************************************
 
 PRINT 'Loading MenuItem';
 BULK INSERT MenuItem FROM '$(DataPath)MenuItem.csv'
@@ -210,6 +215,8 @@ WITH (
 	FORMAT = 'CSV'
 );
 
+-- ******************************************************
+
 PRINT 'Loading Branch';
 BULK INSERT Branch FROM '$(DataPath)Branch.csv'
 WITH (
@@ -223,10 +230,23 @@ WITH (
 	FORMAT = 'CSV'
 );
 
+-- ******************************************************
+
+PRINT 'Loading Department';
+INSERT INTO Department
+SELECT b.BranchID, d.DeptName, 15000000 
+FROM 
+	Branch b, 
+	(VALUES ('Kitchen'), ('Reception'), ('Waiter'), ('Cashier'), ('Manager')) AS d(DeptName)
+
+-- ******************************************************
+
 PRINT 'Loading BranchMenuItem';
 INSERT INTO BranchMenuItem
 SELECT b.BranchID, mi.ItemID, 1
 FROM Branch b, MenuItem mi
+
+-- ******************************************************
 
 PRINT 'Loading CardType';
 BULK INSERT CardType FROM '$(DataPath)CardType.csv'
@@ -240,3 +260,5 @@ WITH (
 	FIRSTROW = 2,
 	FORMAT = 'CSV'
 );
+
+-- ******************************************************

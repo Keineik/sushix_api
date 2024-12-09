@@ -8,7 +8,6 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface MembershipCardMapper {
-
     @Mapping(target = "cardTypeId", source = "cardType.cardTypeId")
     @Mapping(target = "custId", source = "customer.custId")
     MembershipCardResponse toMembershipCardResponse(MembershipCard membershipCard);
