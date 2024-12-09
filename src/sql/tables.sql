@@ -170,12 +170,12 @@ CREATE TABLE Account (
     AccountID INT IDENTITY(1,1) PRIMARY KEY,
     Username NVARCHAR(100) NOT NULL UNIQUE,
     [Password] NVARCHAR(255) NOT NULL,
-    CustomerID INT DEFAULT NULL,
+    CustID INT DEFAULT NULL,
     StaffID INT DEFAULT NULL,
-	IsAdmin BIT NOT NULL,
+	IsAdmin BIT NOT NULL DEFAULT 0,
 
-    CONSTRAINT FK_Account_Customer FOREIGN KEY (CustomerID) REFERENCES Customer(CustID),
-    CONSTRAINT FK_Account_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
+    CONSTRAINT FK_User_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
+    CONSTRAINT FK_User_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
 );
 
 -- ******************************************************
