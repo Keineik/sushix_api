@@ -161,7 +161,7 @@ CREATE TABLE Customer (
 CREATE TABLE CardType (
     CardTypeID INT IDENTITY(1,1) PRIMARY KEY,
     CardName VARCHAR(10) NOT NULL,
-    DiscountRate DECIMAL(5,2) CHECK (DiscountRate BETWEEN 0 AND 100),
+	DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
     PointsRequiredForRenewal INT CHECK (PointsRequiredForRenewal >= 0),
     PointsRequiredForUpgrade INT CHECK (PointsRequiredForUpgrade >= 0)
 );
@@ -189,20 +189,21 @@ CREATE TABLE Account (
 );
 
 CREATE TABLE OnlineAccess (
-	CustID INT,
-	StartDateTime DATETIME,
+	AccessID INT IDENTITY(1,1) PRIMARY KEY,
+	CustID INT NOT NULL,
+	StartDateTime DATETIME NOT NULL,
 	EndDateTime DATETIME,
 
-	CONSTRAINT PK_OnlineAccess PRIMARY KEY (CustID, StartDateTime),
+	CONSTRAINT UQ_CustID_StartDateTime UNIQUE (CustID, StartDateTime),
 	CONSTRAINT FK_OnlineAccess FOREIGN KEY (CustID) REFERENCES Customer(CustID)
 );
 
 CREATE TABLE Reservation (
 	RsID INT IDENTITY(1, 1) PRIMARY KEY,
-	NumOfGuests INT,
-	RsDateTime DateTime,
-	ArrivalDateTime DateTime,
-	RsNotes NVARCHAR(1000),
+	NumOfGuests INT NOT NULL,
+	RsDateTime DateTime DEFAULT GETDATE(),
+	ArrivalDateTime DateTime NOT NULL,
+	RsNotes NVARCHAR(2047),
 	BranchID INT NOT NULL,
 	CustID INT NOT NULL,
 
@@ -212,7 +213,7 @@ CREATE TABLE Reservation (
 
 CREATE TABLE [Order] (
 	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
-	OrderDateTime DateTime,
+	OrderDateTime DateTime DEFAULT GETDATE(),
 	OrderStatus NVARCHAR(50),
 	StaffID INT,
 	CustID INT NOT NULL,
@@ -223,12 +224,13 @@ CREATE TABLE [Order] (
 );
 
 CREATE TABLE OrderDetails (
-	OrderID INT,
-	ItemID INT,
+	DetailsID INT IDENTITY(1, 1) PRIMARY KEY,
+	OrderID INT NOT NULL,
+	ItemID INT NOT NULL,
 	UnitPrice DECIMAL(19,4) CHECK (UnitPrice >= 0),
 	OrderQuantity INT CHECK (OrderQuantity > 0),
 
-	CONSTRAINT PK_OrderDetails PRIMARY KEY (OrderID, ItemID),
+	CONSTRAINT UQ_OrderID_ItemID UNIQUE (OrderID, ItemID),
 	CONSTRAINT FK_OrderDetails_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
 	CONSTRAINT FK_OrderDetails_Item FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID),
 );
@@ -237,7 +239,7 @@ CREATE TABLE [Table] (
 	TableID INT,
 	BranchID INT,
 	NumOfSeats INT,
-	isVacant BIT NOT NULL,
+	isVacant BIT DEFAULT 0,
 
 	CONSTRAINT PK_Table PRIMARY KEY (TableID, BranchID),
 	CONSTRAINT FK_Table_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
@@ -256,15 +258,38 @@ CREATE TABLE DineInOrder (
 
 CREATE TABLE DeliveryOrder (
 	OrderID INT PRIMARY KEY,
-	DeliveryAddress NVARCHAR(1000) NOT NULL,
+	DeliveryAddress NVARCHAR(2047) NOT NULL,
 	DeliveryDateTime DATETIME,
 
 	CONSTRAINT FK_DeliveryOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
 );
 
+-- Continue fixing from here
+
+CREATE TABLE Coupon (
+    CouponID INT IDENTITY(1,1) PRIMARY KEY,
+    CouponCode VARCHAR(20),
+    CouponDesc VARCHAR(255),
+    DiscountRate DECIMAL(5,2),
+    MinPurchase DECIMAL(10,2),
+    MaxDiscount DECIMAL(10,2),
+    EffectiveDate DATE,
+    ExpiryDate DATE,
+    TotalUsageLimit INT,
+    MinMembershipRequirement INT
+);
+
 CREATE TABLE Invoice(
 	InvoiceID INT IDENTITY(1, 1) PRIMARY KEY,
 	OrderID INT NOT NULL,
+	DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
+	TaxRate DECIMAL(4,3) CHECK (TaxRate BETWEEN 0 AND 1),
+	ShippingCost DECIMAL(19, 4) CHECK (ShippingCost >= 0),
+	PaymentMethod NVARCHAR(50) NOT NULL,
+	InvoiceDate DATETIME DEFAULT GETDATE(),
+	CouponID INT,
+
+	CONSTRAINT FK_Invoice_Coupon FOREIGN KEY (InvoiceID) REFERENCES Coupon(CouponID)
 );
 
 CREATE TABLE CustomerRating (

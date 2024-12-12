@@ -132,10 +132,10 @@ public class AuthenticationService {
                 .expirationTime(new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli()))
                 .claim("accountId", account.getAccountId())
                 .claim("username", account.getUsername())
-                .claim("custId", (account.getCustomer() == null) ? null : account.getCustomer().getCustId())
-                .claim("staffId", (account.getStaff() == null) ? null : account.getStaff().getStaffId())
                 .claim("isAdmin", account.getIsAdmin())
                 .claim("scope", buildScope(account))
+                .claim("customer", account.getCustomer())
+                .claim("staff", account.getStaff())
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -154,6 +154,7 @@ public class AuthenticationService {
     private String buildScope(Account account) {
         return ((account.getIsAdmin()) ? "ADMIN" : "")
                 + ((account.getCustomer() != null) ? "CUSTOMER" : "")
-                + ((account.getStaff() != null) ? "STAFF" : "");
+                + ((account.getStaff() != null) ? "STAFF" : "")
+                + ((account.getStaff() != null && account.getStaff().getIsBranchManager()) ? "MANAGER" : "");
     }
 }

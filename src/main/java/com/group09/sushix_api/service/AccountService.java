@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class AccountService {
         accountRepository.deleteById(accountId);
     }
 
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
     public List<AccountResponse> getAccounts() {
         log.info("In method get Accounts");
         return accountRepository.findAll().stream().map(accountMapper::toAccountResponse).toList();
