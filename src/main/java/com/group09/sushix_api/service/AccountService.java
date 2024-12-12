@@ -24,36 +24,6 @@ import java.util.List;
 public class AccountService {
     AccountRepository accountRepository;
     AccountMapper accountMapper;
-//    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-
-//    public AccountResponse createAccount(CustomerRegisterRequest request) {
-//        Account account = accountMapper.toAccount(request);
-//        account.setPassword(passwordEncoder.encode(request.getPassword()));
-//
-//        return accountMapper.toAccountResponse(accountRepository.save(account));
-//    }
-
-//    public AccountResponse getMyInfo() {
-//        var context = SecurityContextHolder.getContext();
-//        String name = context.getAuthentication().getName();
-//
-//        Account account = accountRepository
-//                .findByAccountname(name)
-//                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
-//
-//        return accountMapper.toAccountResponse(account);
-//    }
-
-//    public AccountResponse updateAccount(Integer accountId, AccountUpdateRequest request) {
-//        Account account = accountRepository
-//                .findById(accountId)
-//                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
-//
-//        accountMapper.updateAccount(account, request);
-//        account.setPassword(passwordEncoder.encode(request.getPassword()));
-//
-//        return accountMapper.toAccountResponse(accountRepository.save(account));
-//    }
 
     public void deleteAccount(Integer accountId) {
         accountRepository.deleteById(accountId);

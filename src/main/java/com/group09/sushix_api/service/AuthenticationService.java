@@ -2,8 +2,11 @@ package com.group09.sushix_api.service;
 
 
 import com.group09.sushix_api.dto.request.AuthenticationRequest;
+import com.group09.sushix_api.dto.request.IntrospectRequest;
 import com.group09.sushix_api.dto.request.RegisterRequest;
 import com.group09.sushix_api.dto.response.AccountResponse;
+import com.group09.sushix_api.dto.response.AuthenticationResponse;
+import com.group09.sushix_api.dto.response.IntrospectResponse;
 import com.group09.sushix_api.entity.Account;
 import com.group09.sushix_api.entity.Customer;
 import com.group09.sushix_api.entity.MembershipCard;
@@ -13,22 +16,42 @@ import com.group09.sushix_api.mapper.AccountMapper;
 import com.group09.sushix_api.repository.AccountRepository;
 import com.group09.sushix_api.repository.CustomerRepository;
 import com.group09.sushix_api.repository.MembershipCardRepository;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class AuthenticationService {
+    PasswordEncoder passwordEncoder;
     AccountRepository accountRepository;
     AccountMapper accountMapper;
     CustomerRepository customerRepository;
     MembershipCardRepository membershipCardRepository;
 
+    @NonFinal
+    @Value("${jwt.signerKey}")
+    protected String SIGNER_KEY;
 
+    @Transactional
     public AccountResponse register(RegisterRequest request) {
         // Check if card exists
         boolean hasCard = false;
@@ -54,7 +77,6 @@ public class AuthenticationService {
                     .build();
         }
 
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         Account account = accountMapper.toAccount(request);
         account.setCustomer(customer);
         account.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -66,11 +88,72 @@ public class AuthenticationService {
         return accountMapper.toAccountResponse(account);
     }
 
-    public boolean authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
 
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        return passwordEncoder.matches(request.getPassword(), account.getPassword());
+        boolean isAuthenticated = passwordEncoder.matches(request.getPassword(), account.getPassword());
+
+        if (!isAuthenticated)
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        var token = generateToken(account);
+
+        return AuthenticationResponse.builder()
+                .token(token)
+                .isAuthenticated(true)
+                .build();
+    }
+
+    public IntrospectResponse introspect(IntrospectRequest request)
+            throws JOSEException, ParseException {
+        var token = request.getToken();
+
+        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        var verified = signedJWT.verify(verifier);
+
+        return IntrospectResponse.builder()
+                .isValid(verified && expiryTime.after(new Date()))
+                .build();
+    }
+
+    private String generateToken(Account account) {
+        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(account.getUsername())
+                .issuer("sushix.group09")
+                .issueTime(new Date())
+                .expirationTime(new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli()))
+                .claim("accountId", account.getAccountId())
+                .claim("username", account.getUsername())
+                .claim("custId", (account.getCustomer() == null) ? null : account.getCustomer().getCustId())
+                .claim("staffId", (account.getStaff() == null) ? null : account.getStaff().getStaffId())
+                .claim("isAdmin", account.getIsAdmin())
+                .claim("scope", buildScope(account))
+                .build();
+
+        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+
+        JWSObject jwsObject = new JWSObject(header, payload);
+
+        try {
+            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            return jwsObject.serialize();
+        } catch (JOSEException exception) {
+            log.error("Cannot create token", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private String buildScope(Account account) {
+        return ((account.getIsAdmin()) ? "ADMIN" : "")
+                + ((account.getCustomer() != null) ? "CUSTOMER" : "")
+                + ((account.getStaff() != null) ? "STAFF" : "");
     }
 }
