@@ -264,18 +264,16 @@ CREATE TABLE DeliveryOrder (
 	CONSTRAINT FK_DeliveryOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
 );
 
--- Continue fixing from here
-
 CREATE TABLE Coupon (
     CouponID INT IDENTITY(1,1) PRIMARY KEY,
-    CouponCode VARCHAR(20),
+    CouponCode VARCHAR(50) NOT NULL UNIQUE,
     CouponDesc VARCHAR(255),
-    DiscountRate DECIMAL(5,2),
-    MinPurchase DECIMAL(10,2),
-    MaxDiscount DECIMAL(10,2),
-    EffectiveDate DATE,
-    ExpiryDate DATE,
-    TotalUsageLimit INT,
+    DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
+    MinPurchase DECIMAL(19,4) NOT NULL,
+    MaxDiscount DECIMAL(19,4) NOT NULL,
+    EffectiveDate DATE NOT NULL,
+    ExpiryDate DATE NOT NULL,
+    TotalUsageLimit INT NOT NULL,
     MinMembershipRequirement INT
 );
 
@@ -300,8 +298,8 @@ CREATE TABLE CustomerRating (
 	PricingRating INT CHECK(PricingRating >= 1 and PricingRating <= 10),
 	AmbianceRating INT CHECK(AmbianceRating >= 1 and AmbianceRating <= 10),
 	FeedbackCmt NVARCHAR(MAX),
-	FeedbackDate DATE,
-	InvoiceID INT NOT NULL,
+	FeedbackDate DATE DEFAULT GETDATE(),
+	InvoiceID INT UNIQUE NOT NULL,
 	BranchID INT,
 
 	CONSTRAINT FK_CustomerRating_Invoice FOREIGN KEY (InvoiceID) REFERENCES Invoice(InvoiceID),
@@ -309,11 +307,12 @@ CREATE TABLE CustomerRating (
 );
 
 CREATE TABLE StaffRating (
+	StaffRatingID INT IDENTITY(1,1) PRIMARY KEY,
 	RatingID INT,
 	StaffID INT,
 	StaffRating INT NOT NULL,
 
-	CONSTRAINT PK_StaffRating PRIMARY KEY (RatingID, StaffID),
+	CONSTRAINT UQ_RatingID_StaffID UNIQUE(RatingID, StaffID),
 	CONSTRAINT FK_StaffRating_CustomerRating FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
 );
 
