@@ -139,6 +139,16 @@ CREATE TABLE Staff (
     CONSTRAINT FK_Staff_Department FOREIGN KEY (BranchID, DeptName) REFERENCES Department(BranchID, DeptName)
 );
 
+CREATE TABLE WorkHistory (
+	StaffID INT,
+	StartDate DATE,
+	DeptID INT NOT NULL,
+	QuitDate DATE,
+
+	CONSTRAINT PK_WorkHistory PRIMARY KEY (StaffID, StartDate),
+	CONSTRAINT FK_WorkHistory_Department FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+);
+
 CREATE TABLE Customer (
     CustID INT IDENTITY(1,1) PRIMARY KEY,
     CustName VARCHAR(255) NOT NULL,
@@ -176,6 +186,110 @@ CREATE TABLE Account (
 
     CONSTRAINT FK_User_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
     CONSTRAINT FK_User_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
+);
+
+CREATE TABLE OnlineAccess (
+	CustID INT,
+	StartDateTime DATETIME,
+	EndDateTime DATETIME,
+
+	CONSTRAINT PK_OnlineAccess PRIMARY KEY (CustID, StartDateTime),
+	CONSTRAINT FK_OnlineAccess FOREIGN KEY (CustID) REFERENCES Customer(CustID)
+);
+
+CREATE TABLE Reservation (
+	RsID INT IDENTITY(1, 1) PRIMARY KEY,
+	NumOfGuests INT,
+	RsDateTime DateTime,
+	ArrivalDateTime DateTime,
+	RsNotes NVARCHAR(1000),
+	BranchID INT NOT NULL,
+	CustID INT NOT NULL,
+
+	CONSTRAINT FK_Reservation_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
+	CONSTRAINT FK_Reservation_Customter FOREIGN KEY (CustID) REFERENCES Customer(CustID)
+);
+
+CREATE TABLE [Order] (
+	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
+	OrderDateTime DateTime,
+	OrderStatus NVARCHAR(50),
+	StaffID INT,
+	CustID INT NOT NULL,
+	BranchID INT NOT NULL,
+
+	CONSTRAINT FK_Order_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
+	CONSTRAINT FK_Order_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID)
+);
+
+CREATE TABLE OrderDetails (
+	OrderID INT,
+	ItemID INT,
+	UnitPrice DECIMAL(19,4) CHECK (UnitPrice >= 0),
+	OrderQuantity INT CHECK (OrderQuantity > 0),
+
+	CONSTRAINT PK_OrderDetails PRIMARY KEY (OrderID, ItemID),
+	CONSTRAINT FK_OrderDetails_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
+	CONSTRAINT FK_OrderDetails_Item FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID),
+);
+
+CREATE TABLE [Table] (
+	TableID INT,
+	BranchID INT,
+	NumOfSeats INT,
+	isVacant BIT NOT NULL,
+
+	CONSTRAINT PK_Table PRIMARY KEY (TableID, BranchID),
+	CONSTRAINT FK_Table_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
+);
+
+CREATE TABLE DineInOrder (
+	OrderID INT PRIMARY KEY,
+	TableID INT,
+	BranchID INT,
+	RsID INT,
+
+	CONSTRAINT FK_DineInOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
+	CONSTRAINT FK_DineInOrder_Table FOREIGN KEY (TableID, BranchID) REFERENCES [Table](TableID, BranchID),
+	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES [Order](OrderID)
+);
+
+CREATE TABLE DeliveryOrder (
+	OrderID INT PRIMARY KEY,
+	DeliveryAddress NVARCHAR(1000) NOT NULL,
+	DeliveryDateTime DATETIME,
+
+	CONSTRAINT FK_DeliveryOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
+);
+
+CREATE TABLE Invoice(
+	InvoiceID INT IDENTITY(1, 1) PRIMARY KEY,
+	OrderID INT NOT NULL,
+);
+
+CREATE TABLE CustomerRating (
+	RatingID INT IDENTITY(1, 1) PRIMARY KEY,
+	ServiceRating INT CHECK(ServiceRating >= 1 and ServiceRating <= 10),
+	LocationRating INT CHECK(LocationRating >= 1 and LocationRating <= 10),
+	FoodRating INT CHECK(FoodRating >= 1 and FoodRating <= 10),
+	PricingRating INT CHECK(PricingRating >= 1 and PricingRating <= 10),
+	AmbianceRating INT CHECK(AmbianceRating >= 1 and AmbianceRating <= 10),
+	FeedbackCmt NVARCHAR(MAX),
+	FeedbackDate DATE,
+	InvoiceID INT NOT NULL,
+	BranchID INT,
+
+	CONSTRAINT FK_CustomerRating_Invoice FOREIGN KEY (InvoiceID) REFERENCES Invoice(InvoiceID),
+	CONSTRAINT FK_CustomerRating_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID)
+);
+
+CREATE TABLE StaffRating (
+	RatingID INT,
+	StaffID INT,
+	StaffRating INT NOT NULL,
+
+	CONSTRAINT PK_StaffRating PRIMARY KEY (RatingID, StaffID),
+	CONSTRAINT FK_StaffRating_CustomerRating FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
 );
 
 -- ******************************************************
