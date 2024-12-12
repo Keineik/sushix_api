@@ -67,8 +67,6 @@ SET NOEXEC ON;
 END
 GO
 
-drop database SushiX
-
 USE $(DatabaseName);
 GO
 
