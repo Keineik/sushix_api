@@ -18,6 +18,7 @@ Priority
 ## Stored Procedures to Implement
 
 ### GET
+P/s: 1 stored procedure -> 1 table
 1. **Fetch Items**
 - Fetch items with pagination. 
 - Search by name, ItemID. (?)
@@ -28,7 +29,6 @@ Priority
 - Fetch staffs with pagination. 
 - Search by StaffName and StaffID. 
 - Filter by BranchID, Deparment.
-- Fetch along with work history (or not?)
 
 3. **Fetch Reservation**
 - Fetch reservations with pagination. 
@@ -42,7 +42,6 @@ Priority
 - JOIN with Customer table to get CustName, CustPhoneNumber, CustEmail. 
 - Search by OrderID. Filter by BranchID, OrderType (Dine-In and Delivery) and OrderStatus (e.g., Preparing, Out for Delivery, Delivered, Completed, Cancelled). 
 - Sort by OrderDateTime, estimated total price (Someone got a better name?) . 
-- Fetch along with a list of ordered items (?)
 
 5. **Fetch Invoices**
 - Fetch invoices with pagination. 
@@ -54,7 +53,6 @@ Priority
 6. **Fetch Customers**
 - Fetch customers with pagination. 
 - Search by Name or CustomerID (?). 
-- Fetch along with membership card (?)
 
 7. **Fetch Coupons**
 - Fetch coupons with pagination. 
