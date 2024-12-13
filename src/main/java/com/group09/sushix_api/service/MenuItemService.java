@@ -15,6 +15,7 @@ import com.group09.sushix_api.repository.MenuItemRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class MenuItemService {
                 .toList();
     }
 
+    @Transactional
     public List<MenuItemResponse> fetchItems(
             int page,
             int limit,
@@ -50,30 +52,6 @@ public class MenuItemService {
                 sortKey,
                 sortDirection
         );
-
-        System.out.println("Fetch Parameters:");
-        System.out.println("Page: " + page);
-        System.out.println("Limit: " + limit);
-        System.out.println("Search Term: " + searchTerm);
-        System.out.println("Category ID: " + categoryId);
-        System.out.println("Branch ID: " + branchId);
-        System.out.println("Sort Key: " + sortKey);
-        System.out.println("Sort Direction: " + sortDirection);
-
-        System.out.println("Total Items Fetched: " + items.size());
-
-        for (MenuItem item : items) {
-            System.out.println("Item Details:");
-            System.out.println("  Item ID: " + item.getItemId());
-            System.out.println("  Item Name: " + item.getItemName());
-            System.out.println("  Unit Price: " + item.getUnitPrice());
-            System.out.println("  Serving Unit: " + item.getServingUnit());
-            System.out.println("  Category ID: " + item.getCategoryId());
-            System.out.println("  Is Discontinued: " + item.getIsDiscontinued());
-            System.out.println("  Image URL: " + item.getImgUrl());
-            System.out.println("---");
-        }
-
         return items.stream().map(menuItemMapper::toMenuItemResponse).toList();
     }
 
