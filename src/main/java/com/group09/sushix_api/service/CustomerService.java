@@ -9,6 +9,7 @@ import com.group09.sushix_api.mapper.CustomerMapper;
 import com.group09.sushix_api.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class CustomerService {
     CustomerRepository customerRepository;
     CustomerMapper customerMapper;
 
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN, SCOPE_STAFF, SCOPE_MANAGER')")
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository
                 .findAll()

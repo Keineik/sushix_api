@@ -201,8 +201,8 @@ CREATE TABLE OnlineAccess (
 CREATE TABLE Reservation (
 	RsID INT IDENTITY(1, 1) PRIMARY KEY,
 	NumOfGuests INT NOT NULL,
-	RsDateTime DateTime DEFAULT GETDATE(),
-	ArrivalDateTime DateTime NOT NULL,
+	RsDateTime DATETIME DEFAULT GETDATE(),
+	ArrivalDateTime DATETIME NOT NULL,	
 	RsNotes NVARCHAR(2047),
 	BranchID INT NOT NULL,
 	CustID INT NOT NULL,
@@ -213,7 +213,7 @@ CREATE TABLE Reservation (
 
 CREATE TABLE [Order] (
 	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
-	OrderDateTime DateTime DEFAULT GETDATE(),
+	OrderDateTime DATETIME DEFAULT GETDATE(),
 	OrderStatus NVARCHAR(50),
 	StaffID INT,
 	CustID INT NOT NULL,
@@ -236,30 +236,31 @@ CREATE TABLE OrderDetails (
 );
 
 CREATE TABLE [Table] (
-	TableID INT,
-	BranchID INT,
+	TableID INT IDENTITY(1,1) PRIMARY KEY,
+	TableCode INT NOT NULL,
+	BranchID INT NOT NULL,
 	NumOfSeats INT,
 	isVacant BIT DEFAULT 0,
 
-	CONSTRAINT PK_Table PRIMARY KEY (TableID, BranchID),
+	CONSTRAINT UQ_Table UNIQUE (BranchID, TableCode),
 	CONSTRAINT FK_Table_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
 );
 
 CREATE TABLE DineInOrder (
 	OrderID INT PRIMARY KEY,
-	TableID INT,
-	BranchID INT,
+	TableCode INT,
+	BranchID INT NOT NULL,
 	RsID INT,
 
 	CONSTRAINT FK_DineInOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
-	CONSTRAINT FK_DineInOrder_Table FOREIGN KEY (TableID, BranchID) REFERENCES [Table](TableID, BranchID),
+	CONSTRAINT FK_DineInOrder_Table FOREIGN KEY (BranchID, TableCode) REFERENCES [Table](BranchID, TableCode),
 	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES [Order](OrderID)
 );
 
 CREATE TABLE DeliveryOrder (
 	OrderID INT PRIMARY KEY,
 	DeliveryAddress NVARCHAR(2047) NOT NULL,
-	DeliveryDateTime DATETIME,
+	DeliveryDateTime DATETIME NOT NULL,
 
 	CONSTRAINT FK_DeliveryOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
 );
