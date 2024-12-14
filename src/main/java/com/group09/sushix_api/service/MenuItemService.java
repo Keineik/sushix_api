@@ -1,6 +1,8 @@
 package com.group09.sushix_api.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.springframework.stereotype.Service;
 
@@ -34,7 +36,7 @@ public class MenuItemService {
     }
 
     @Transactional
-    public List<MenuItemResponse> fetchItems(
+    public Map<String, Object> fetchItems(
             int page,
             int limit,
             String searchTerm,
@@ -52,7 +54,21 @@ public class MenuItemService {
                 sortKey,
                 sortDirection
         );
-        return items.stream().map(menuItemMapper::toMenuItemResponse).toList();
+
+        int totalCount = menuItemRepository.countItems(
+                searchTerm,
+                categoryId,
+                branchId
+        );
+        List<MenuItemResponse> menuItemResponses = items.stream()
+                .map(menuItemMapper::toMenuItemResponse)
+                .toList();
+
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("items", menuItemResponses);
+        responseMap.put("totalCount", totalCount);
+
+        return responseMap;
     }
 
     public MenuItemResponse getMenuItem(Integer itemId) {

@@ -50,7 +50,23 @@ begin
     
 end;
 GO
-exec usp_FetchItems
+create or alter proc usp_CountItems
+    @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
+    @CategoryID int = 0, -- Filter
+    @BranchID int = 0, -- Filter
+	@count int out
+as
+begin
+	SET NOCOUNT ON;
+
+    declare @Search nvarchar(100) = '%' + @SearchTerm + '%';
+
+	select count(distinct(mi.ItemID))
+	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
+	where (mi.ItemName like @Search or mi.ItemID like @Search)
+		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
+		and (@BranchID = 0 or bmi.BranchID = @BranchID)
+end;
 GO
 
 -- 2. Fetch Staffs

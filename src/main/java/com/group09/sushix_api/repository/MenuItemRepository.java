@@ -10,7 +10,6 @@ import com.group09.sushix_api.entity.MenuItem;
 
 @Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
-    //@Query(value = "EXEC usp_FetchItems :Page, :Limit, :SearchTerm, :CategoryID, :BranchID, :SortKey, :SortDirection", nativeQuery = true)
     @Procedure(procedureName = "usp_FetchItems")
     List<MenuItem> fetchItems(
             @Param("Page") int page,
@@ -20,5 +19,12 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
             @Param("BranchID") int branchId,
             @Param("SortKey") String sortKey,
             @Param("SortDirection") boolean sortDirection
+    );
+
+    @Procedure(procedureName = "usp_CountItems")
+    int countItems(
+            @Param("SearchTerm") String searchTerm,
+            @Param("CategoryID") int categoryId,
+            @Param("BranchID") int branchId
     );
 }

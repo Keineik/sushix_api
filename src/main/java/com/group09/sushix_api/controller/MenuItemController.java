@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/menu-item")
@@ -22,7 +22,7 @@ public class MenuItemController {
     MenuItemService menuItemService;
 
     @GetMapping
-    public ApiResponse<List<MenuItemResponse>> fetchItems(
+    public ApiResponse<Map<String, Object>> fetchItems(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "18") int limit,
             @RequestParam(defaultValue = "") String searchTerm,
@@ -31,16 +31,18 @@ public class MenuItemController {
             @RequestParam(defaultValue = "ID") String sortKey,
             @RequestParam(defaultValue = "false") boolean sortDirection
     ) {
-        return ApiResponse.<List<MenuItemResponse>>builder()
-                .result(menuItemService.fetchItems(
-                        page,
-                        limit,
-                        searchTerm,
-                        categoryId,
-                        branchId,
-                        sortKey,
-                        sortDirection
-                ))
+        Map<String, Object> result = menuItemService.fetchItems(
+                page,
+                limit,
+                searchTerm,
+                categoryId,
+                branchId,
+                sortKey,
+                sortDirection
+        );
+
+        return ApiResponse.<Map<String, Object>>builder()
+                .result(result)
                 .build();
     }
 
