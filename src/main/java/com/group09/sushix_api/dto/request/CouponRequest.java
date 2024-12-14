@@ -20,27 +20,27 @@ public class CouponRequest {
     @Size(max = 255)
     String couponDesc;
 
-    @DecimalMin(value = "0.0", inclusive = true)
-    @DecimalMax(value = "1.0", inclusive = true)
+    @DecimalMin(value = "0.0")
+    BigDecimal discountFlat;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "1.0")
     BigDecimal discountRate;
 
-    @NotNull
     @DecimalMin(value = "0.0", inclusive = false)
     BigDecimal minPurchase;
 
-    @NotNull
     @DecimalMin(value = "0.0", inclusive = false)
     BigDecimal maxDiscount;
 
-    @NotNull
     LocalDate effectiveDate;
 
-    @NotNull
     LocalDate expiryDate;
 
-    @NotNull
     @Min(1)
     Integer totalUsageLimit;
+
+    Integer RemainingUsage;
 
     Integer minMembershipRequirement;
 }

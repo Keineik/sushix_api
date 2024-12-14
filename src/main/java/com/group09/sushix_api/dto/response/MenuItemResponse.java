@@ -16,6 +16,7 @@ public class MenuItemResponse {
     BigDecimal unitPrice;
     String servingUnit;
     Integer categoryId;
+    Integer soldQuantity;
     Boolean isDiscontinued;
     String imgUrl;
 }

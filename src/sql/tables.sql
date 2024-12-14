@@ -81,6 +81,7 @@ CREATE TABLE MenuItem (
     UnitPrice DECIMAL(19,4) CHECK (UnitPrice >= 0),
     ServingUnit NVARCHAR(10),
     CategoryID INT,
+	SoldQuantity INT DEFAULT 0,
     IsDiscontinued BIT,
 	ImgUrl NVARCHAR(2083),
 
@@ -129,15 +130,21 @@ CREATE TABLE BranchMenuItem (
 
 CREATE TABLE Staff (
     StaffID INT IDENTITY(1,1) PRIMARY KEY,
-    StaffName VARCHAR(100) NOT NULL,
-    StaffDOB DATE,
-    StaffGender CHAR(1) CHECK (StaffGender IN ('M', 'F')),
     DeptName VARCHAR(10),
     BranchID INT,
 	isBranchManager BIT DEFAULT 0,
 
     CONSTRAINT FK_Staff_Department FOREIGN KEY (BranchID, DeptName) REFERENCES Department(BranchID, DeptName)
 );
+
+CREATE TABLE StaffInfo (
+	StaffID INT PRIMARY KEY,
+	StaffName NVARCHAR(100) NOT NULL,
+	StaffDOB DATE,
+	StaffGender CHAR(1) CHECK (StaffGender IN ('M', 'F')),
+
+	CONSTRAINT FK_StaffInfo_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
+)
 
 CREATE TABLE WorkHistory (
 	StaffID INT,
@@ -171,7 +178,10 @@ CREATE TABLE MembershipCard (
     IssuedDate DATE DEFAULT GETDATE(),
     CardType INT NOT NULL,
     CustID INT NOT NULL,
-
+	StaffID INT NOT NULL,
+	Points INT DEFAULT 0,
+	
+	CONSTRAINT FK_MembershipCard_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID),
     CONSTRAINT FK_MembershipCard_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
     CONSTRAINT FK_MembershipCard_CardType FOREIGN KEY (CardType) REFERENCES CardType(CardTypeID)
 );
@@ -200,7 +210,7 @@ CREATE TABLE OnlineAccess (
 
 CREATE TABLE Reservation (
 	RsID INT IDENTITY(1, 1) PRIMARY KEY,
-	NumOfGuests INT NOT NULL,
+	NumOfGuests INT NOT NULL CHECK (NumOfGuests >= 0),
 	RsDateTime DATETIME DEFAULT GETDATE(),
 	ArrivalDateTime DATETIME NOT NULL,	
 	RsNotes NVARCHAR(2047),
@@ -214,10 +224,15 @@ CREATE TABLE Reservation (
 CREATE TABLE [Order] (
 	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
 	OrderDateTime DATETIME DEFAULT GETDATE(),
-	OrderStatus NVARCHAR(50),
+	OrderStatus CHAR(10) CHECK (OrderStatus IN (
+		'UNVERIFIED', 'VERIFIED', 'DELIVERED', 'COMPLETED', 'CANCELLED'
+	)),
 	StaffID INT,
 	CustID INT NOT NULL,
 	BranchID INT NOT NULL,
+	OrderType CHAR(1) CHECK (OrderType IN (
+		'D', 'I' -- D for DeliveryOrder, I for DineInOrder
+	)),
 
 	CONSTRAINT FK_Order_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
 	CONSTRAINT FK_Order_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID)
@@ -228,7 +243,7 @@ CREATE TABLE OrderDetails (
 	OrderID INT NOT NULL,
 	ItemID INT NOT NULL,
 	UnitPrice DECIMAL(19,4) CHECK (UnitPrice >= 0),
-	OrderQuantity INT CHECK (OrderQuantity > 0),
+	Quantity INT CHECK (Quantity > 0),
 
 	CONSTRAINT UQ_OrderID_ItemID UNIQUE (OrderID, ItemID),
 	CONSTRAINT FK_OrderDetails_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
@@ -240,7 +255,7 @@ CREATE TABLE [Table] (
 	TableCode INT NOT NULL,
 	BranchID INT NOT NULL,
 	NumOfSeats INT,
-	isVacant BIT DEFAULT 0,
+	isVacant BIT DEFAULT 1,
 
 	CONSTRAINT UQ_Table UNIQUE (BranchID, TableCode),
 	CONSTRAINT FK_Table_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
@@ -269,21 +284,24 @@ CREATE TABLE Coupon (
     CouponID INT IDENTITY(1,1) PRIMARY KEY,
     CouponCode VARCHAR(50) NOT NULL UNIQUE,
     CouponDesc VARCHAR(255),
+	DiscountFlat DECIMAL(19,4),
     DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
     MinPurchase DECIMAL(19,4) NOT NULL,
     MaxDiscount DECIMAL(19,4) NOT NULL,
     EffectiveDate DATE NOT NULL,
     ExpiryDate DATE NOT NULL,
     TotalUsageLimit INT NOT NULL,
+	RemainingUsage INT NOT NULL,
     MinMembershipRequirement INT
 );
 
 CREATE TABLE Invoice(
 	InvoiceID INT IDENTITY(1, 1) PRIMARY KEY,
 	OrderID INT NOT NULL,
+	Subtotal DECIMAL(19,4) NOT NULL,
 	DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
 	TaxRate DECIMAL(4,3) CHECK (TaxRate BETWEEN 0 AND 1),
-	ShippingCost DECIMAL(19, 4) CHECK (ShippingCost >= 0),
+	ShippingCost DECIMAL(19, 4) DEFAULT 0,
 	PaymentMethod NVARCHAR(50) NOT NULL,
 	InvoiceDate DATETIME DEFAULT GETDATE(),
 	CouponID INT,

@@ -16,7 +16,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Coupon {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CouponID")
@@ -27,6 +26,9 @@ public class Coupon {
 
     @Column(name = "CouponDesc", length = 255)
     String couponDesc;
+
+    @Column(name = "DiscountFlat", precision = 19, scale = 4)
+    BigDecimal discountFlat;
 
     @Column(name = "DiscountRate", precision = 4, scale = 3)
     BigDecimal discountRate;
@@ -45,6 +47,9 @@ public class Coupon {
 
     @Column(name = "TotalUsageLimit", nullable = false)
     Integer totalUsageLimit;
+
+    @Column(name = "RemainingUsage", nullable = false)
+    Integer RemainingUsage;
 
     @Column(name = "MinMembershipRequirement")
     Integer minMembershipRequirement;

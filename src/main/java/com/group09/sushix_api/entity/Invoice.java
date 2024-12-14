@@ -25,17 +25,20 @@ public class Invoice {
     @JoinColumn(name = "OrderID", nullable = false)
     Order order;
 
+    @Column(name = "Subtotal", precision = 19, scale = 4)
+    BigDecimal subtotal;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CouponID")
     Coupon coupon;
 
-    @Column(name = "DiscountRate")
+    @Column(name = "DiscountRate", precision = 4, scale = 3)
     BigDecimal discountRate;
 
-    @Column(name = "TaxRate")
+    @Column(name = "TaxRate", precision = 4, scale = 3)
     BigDecimal taxRate;
 
-    @Column(name = "ShippingCost")
+    @Column(name = "ShippingCost", precision = 19, scale = 4)
     BigDecimal shippingCost;
 
     @Column(name = "PaymentMethod", nullable = false, length = 50)

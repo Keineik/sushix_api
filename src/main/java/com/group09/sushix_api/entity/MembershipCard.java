@@ -30,4 +30,11 @@ public class MembershipCard {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CustID", referencedColumnName = "CustID", nullable = false)
     Customer customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "StaffID", referencedColumnName = "StaffID", nullable = false)
+    Staff staff;
+
+    @Column(name = "Points", nullable = false)
+    Integer points;
 }

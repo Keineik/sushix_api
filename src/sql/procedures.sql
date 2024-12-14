@@ -1,4 +1,4 @@
-Use SushiX
+﻿Use SushiX
 GO
 
 --1. Fetch Items
@@ -29,13 +29,14 @@ begin
 		mi.UnitPrice,
 		mi.ServingUnit,
 		mi.CategoryID,
+		mi.SoldQuantity,
 		mi.IsDiscontinued,
 		mi.ImgUrl
 	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
 	where (mi.ItemName like @Search or mi.ItemID like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
 		and (@BranchID = 0 or bmi.BranchID = @BranchID)
-	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.IsDiscontinued, mi.ImgUrl
+	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.SoldQuantity, mi.IsDiscontinued, mi.ImgUrl
 	order by 
     case 
         when @SortKey = 'price' AND @SortDirection = 0 then UnitPrice
@@ -56,44 +57,44 @@ GO
 -- Fetch staffs with pagination. 
 -- Search by StaffName and StaffID. 
 -- Filter by BranchID, Deparment.
-CREATE OR ALTER PROC usp_FetchStaffs
-	@Page int = 1,
-	@Limit int = 18,
-	@SearchTerm nvarchar(100) = '', -- StaffID/StaffName
-	@BranchID int = 0, --Filter
-	@Department varchar(10) = ''
-AS
-BEGIN
-	SET NOCOUNT ON;
+--CREATE OR ALTER PROC usp_FetchStaffs
+--	@Page int = 1,
+--	@Limit int = 18,
+--	@SearchTerm nvarchar(100) = '', -- StaffID/StaffName
+--	@BranchID int = 0, --Filter
+--	@Department varchar(10) = ''
+--AS
+--BEGIN
+--	SET NOCOUNT ON;
 
-	DECLARE @Offset int = (@Page - 1) * @Limit;
-	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
+--	DECLARE @Offset int = (@Page - 1) * @Limit;
+--	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
 
-	SELECT s.StaffID,
-	s.StaffName,
-	s.StaffDOB,
-	s.StaffGender,
-	s.DeptName,
-	s.BranchID,
-	s.isBranchManager
-	FROM Staff s
-	WHERE s.StaffID like @Search or s.StaffName like @Search
-		AND (@BranchID = 0 OR s.BranchID = @BranchID)
-		AND (@Department = '' OR s.DeptName = @Department)
-	ORDER BY s.StaffID,
-	s.StaffName,
-	s.StaffDOB,
-	s.StaffGender,
-	s.DeptName,
-	s.BranchID,
-	s.isBranchManager
-	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
-END
-GO
+--	SELECT s.StaffID,
+--	s.StaffName,
+--	s.StaffDOB,
+--	s.StaffGender,
+--	s.DeptName,
+--	s.BranchID,
+--	s.isBranchManager
+--	FROM Staff s
+--	WHERE s.StaffID like @Search or s.StaffName like @Search
+--		AND (@BranchID = 0 OR s.BranchID = @BranchID)
+--		AND (@Department = '' OR s.DeptName = @Department)
+--	ORDER BY s.StaffID,
+--	s.StaffName,
+--	s.StaffDOB,
+--	s.StaffGender,
+--	s.DeptName,
+--	s.BranchID,
+--	s.isBranchManager
+--	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+--END
+--GO
 
-EXEC sp_FetchStaffs
+--EXEC sp_FetchStaffs
 
-GO
+--GO
 
 -- 3. Fetch Reservation
 -- Fetch reservations with pagination. 
@@ -178,7 +179,7 @@ BEGIN
 			WHEN dio.OrderID IS NOT NULL THEN 'Dine-In'
 			ELSE 'Unknown'
 		END AS OrderType,
-		ISNULL(SUM(od.UnitPrice * od.OrderQuantity), 0) AS EstimatedPrice
+		ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS EstimatedPrice
 	FROM [Order] o
 	JOIN Customer c ON o.CustID = c.CustID
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
@@ -241,7 +242,7 @@ BEGIN
         i.InvoiceDate,
         i.PaymentMethod,
         i.ShippingCost,
-        ISNULL(SUM(od.UnitPrice * od.OrderQuantity), 0) AS TotalPrice,
+        ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS TotalPrice,
         c.CustName,
         c.CustPhoneNumber,
         c.CustEmail
@@ -262,10 +263,10 @@ BEGIN
         c.CustEmail
     ORDER BY 
         CASE 
-            WHEN @SortDirection = 0 THEN SUM(od.UnitPrice * od.OrderQuantity)
+            WHEN @SortDirection = 0 THEN SUM(od.UnitPrice * od.Quantity)
         END ASC,
         CASE 
-            WHEN @SortDirection = 1 THEN SUM(od.UnitPrice * od.OrderQuantity)
+            WHEN @SortDirection = 1 THEN SUM(od.UnitPrice * od.Quantity)
         END DESC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
@@ -357,3 +358,189 @@ GO
 -- 8. Fetch statistics for a branch
 -- - (e.g., number of orders, revenue, online accesss) I have no idea 
 
+-- 9. Add Reservation
+GO
+CREATE OR ALTER PROCEDURE usp_InsertReservation
+    @NumOfGuests INT,
+    @ArrivalDateTime DATETIME,
+    @RsNotes NVARCHAR(2047),
+    @BranchID INT,
+    @CustID INT
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+	BEGIN TRANSACTION;
+
+	IF (@ArrivalDateTime <= GETDATE())
+		THROW 51000, 'Arrival date time must be after current date time', 1;
+
+    INSERT INTO Reservation (NumOfGuests, ArrivalDateTime, RsNotes, BranchID, CustID)
+    VALUES (@NumOfGuests, @ArrivalDateTime, @RsNotes, @BranchID, @CustID);
+
+    -- Return the generated ID
+    SELECT SCOPE_IDENTITY();
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+GO
+
+-- 10. Add Delivery Order
+GO
+CREATE OR ALTER PROCEDURE usp_InsertDeliveryOrder
+    @CustID INT = NULL,
+    @BranchID INT,
+	@DeliveryAddress NVARCHAR(2047),
+	@DeliveryDateTime DATETIME
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+	BEGIN TRANSACTION;
+
+	IF (@DeliveryDateTime <= GETDATE())
+		THROW 51000, 'Delivery date time must be after current date time', 1;
+
+    INSERT INTO [Order] (OrderStatus, CustID, BranchID)
+    VALUES ('UNVERIFIED', @CustID, @BranchID);
+    
+	INSERT INTO DeliveryOrder (OrderID, DeliveryAddress, DeliveryDateTime)
+	VALUES (SCOPE_IDENTITY(), @DeliveryAddress, @DeliveryDateTime);
+
+	-- Return the generated ID
+    SELECT SCOPE_IDENTITY();
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+GO
+
+-- 11. Add Dine-In Order
+GO
+CREATE OR ALTER PROCEDURE usp_InsertDineInOrder
+    @CustID INT = NULL,
+    @BranchID INT,
+	@StaffID INT = NULL, -- Determine an order is created by a staff or by a customer through reservation
+	@TableCode INT,
+	@RsID INT = NULL
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+	BEGIN TRANSACTION;
+	
+	IF (@StaffID IS NOT NULL) -- If created by a staff
+	BEGIN
+		IF EXISTS (
+			SELECT 1 
+			FROM [Table] 
+			WHERE BranchID = @BranchID 
+				AND TableCode = @TableCode
+				AND isVacant = 0
+		) THROW 51000, 'The table is being occupied at the moment', 1;
+
+		INSERT INTO [Order] (OrderStatus, StaffID, CustID, BranchID, OrderType)
+		VALUES ('VERIFIED', @StaffID, @CustID, @BranchID, 'I');
+
+		INSERT INTO DineInOrder (OrderID, TableCode, BranchID, RsID)
+		VALUES (SCOPE_IDENTITY(), @TableCode, @BranchID, @RsID);
+
+		-- Update table status
+		UPDATE [Table] WITH (UPDLOCK, HOLDLOCK)
+		SET isVacant = 0
+		WHERE BranchID = @BranchID AND TableCode = @TableCode
+	END
+	ELSE -- If created by a customer through reservation
+	BEGIN
+		IF (@RsID IS NULL)
+			THROW 51000, 'Pre-order made by customer must include reservation ID', 1;
+
+		INSERT INTO [Order] (OrderStatus, CustID, BranchID, OrderType)
+		VALUES ('UNVERIFIED', @CustID, @BranchID, 'D');
+
+		INSERT INTO DineInOrder (OrderID, BranchID, RsID)
+		VALUES (SCOPE_IDENTITY(), @BranchID, @RsID);
+	END
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+GO
+
+-- 1011.1 Add Order Details
+GO
+CREATE OR ALTER PROCEDURE usp_InsertOrderDetails
+    @OrderID INT,
+	@ItemID INT,
+	@Quantity INT
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+	BEGIN TRANSACTION;
+	
+	DECLARE @OrderType CHAR(1), @BranchID INT, @OrderStatus CHAR(10);
+	SELECT 
+		@OrderType = OrderType, 
+		@BranchID = BranchID,
+		@OrderStatus = OrderStatus
+	FROM [Order] 
+	WHERE OrderID = @OrderID;
+
+	-- Check if Order is not cancelled or completed
+	IF (@OrderStatus NOT IN ('CANCELLED', 'COMPLETED'))
+		THROW 51000, 'Order must not be cancelled or completed', 1;
+
+	-- Check if that branch serve that item
+	DECLARE @IsShippable BIT = (
+		SELECT bmi.IsShippable
+		FROM BranchMenuItem bmi
+		WHERE 
+			bmi.ItemID = @ItemID
+			AND bmi.BranchID = @BranchID
+	);
+
+	IF (@IsShippable IS NULL)
+		THROW 51000, 'This item is not for sale at this branch', 1;
+	IF (@OrderType = 'D' AND @IsShippable = 0)
+		THROW 51000, 'This item cannot be placed on delivery order', 1;
+
+	DECLARE @UnitPrice DECIMAL(19,4) = (SELECT UnitPrice FROM MenuItem WHERE @ItemID = ItemID);
+	INSERT INTO OrderDetails (OrderID, ItemID, UnitPrice, Quantity)
+	VALUES (@OrderID, @ItemID, @UnitPrice, @Quantity);
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+GO
+
+-- 12. Create Invoice from order
+/* Chưa xong :<
+GO
+CREATE OR ALTER PROCEDURE usp_CreateInvoice (
+    @OrderID INT
+)
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+	BEGIN TRANSACTION;
+	
+	INSERT INTO Invoice (OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, CouponID)
+	VALUES (@OrderID);
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+GO
+*/

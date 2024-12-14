@@ -15,4 +15,6 @@ public class MembershipCardResponse {
     Instant issuedDate;
     Integer cardTypeId;
     Integer custId;
+    Integer staffId;
+    Integer points;
 }

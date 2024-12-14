@@ -15,11 +15,13 @@ public class CouponResponse {
     Integer couponId;
     String couponCode;
     String couponDesc;
+    BigDecimal discountFlat;
     BigDecimal discountRate;
     BigDecimal minPurchase;
     BigDecimal maxDiscount;
     LocalDate effectiveDate;
     LocalDate expiryDate;
     Integer totalUsageLimit;
+    Integer RemainingUsage;
     Integer minMembershipRequirement;
 }

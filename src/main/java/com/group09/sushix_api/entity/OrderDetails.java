@@ -31,6 +31,6 @@ public class OrderDetails {
     @Column(name = "UnitPrice", precision = 19, scale = 4)
     BigDecimal unitPrice;
 
-    @Column(name = "OrderQuantity")
-    Integer orderQuantity;
+    @Column(name = "Quantity")
+    Integer quantity;
 }

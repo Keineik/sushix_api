@@ -10,14 +10,17 @@ import org.mapstruct.*;
 public interface MembershipCardMapper {
     @Mapping(target = "cardTypeId", source = "cardType.cardTypeId")
     @Mapping(target = "custId", source = "customer.custId")
+    @Mapping(target = "staffId", source = "staff.staffId")
     MembershipCardResponse toMembershipCardResponse(MembershipCard membershipCard);
 
     @Mapping(target = "cardType", ignore = true)
     @Mapping(target = "customer", ignore = true)
+    @Mapping(target = "staff", ignore = true)
     MembershipCard toMembershipCard(MembershipCardRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "cardType", ignore = true)
     @Mapping(target = "customer", ignore = true)
+    @Mapping(target = "staff", ignore = true)
     void updateMembershipCard(@MappingTarget MembershipCard membershipCard, MembershipCardRequest request);
 }

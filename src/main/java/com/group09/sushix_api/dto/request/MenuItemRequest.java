@@ -22,6 +22,8 @@ public class MenuItemRequest {
 
     Integer categoryId;
 
+    Integer soldQuantity;
+
     Boolean isDiscontinued;
 
     @Size(max = 2083)

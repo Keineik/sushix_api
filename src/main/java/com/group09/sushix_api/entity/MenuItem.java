@@ -33,6 +33,9 @@ public class MenuItem {
     @JoinColumn(name = "CategoryID", referencedColumnName = "CategoryID")
     MenuCategory categoryId;
 
+    @Column(name = "SoldQuantity", nullable = false)
+    Integer soldQuantity;
+
     @Column(name = "IsDiscontinued", nullable = false)
     Boolean isDiscontinued;
 
