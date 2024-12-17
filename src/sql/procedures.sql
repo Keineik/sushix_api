@@ -22,7 +22,7 @@ begin
 	SET NOCOUNT ON;
 	
     declare @Offset int = (@Page - 1) * @Limit;
-    declare @Search nvarchar(100) = '%' + @SearchTerm + '%';
+    declare @Search nvarchar(100) =  @SearchTerm + '%';
 
 	select mi.ItemID,
 		mi.ItemName,
@@ -46,9 +46,15 @@ begin
         when @SortKey = 'price' AND @SortDirection = 1 then UnitPrice
         when @SortKey = 'ID' AND @SortDirection = 1 then mi.ItemID
     end desc
-    offset @Offset rows fetch next @Limit rows only;
-    
+    offset @Offset rows fetch next @Limit rows only
+    OPTION(RECOMPILE)
 end;
+go
+
+--create nonclustered index ix_menuitem_itemname on MenuItem (ItemName)
+
+--exec usp_FetchItems @SearchTerm = N'Bánh'
+
 GO
 create or alter proc usp_CountItems
     @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
@@ -509,7 +515,7 @@ BEGIN TRY
 	WHERE OrderID = @OrderID;
 
 	-- Check if Order is not cancelled or completed
-	IF (@OrderStatus NOT IN ('CANCELLED', 'COMPLETED'))
+	IF (@OrderStatus IN ('CANCELLED', 'COMPLETED'))
 		THROW 51000, 'Order must not be cancelled or completed', 1;
 
 	-- Check if that branch serve that item
@@ -538,19 +544,146 @@ BEGIN CATCH
 END CATCH
 GO
 
--- 12. Create Invoice from order
-/* Chưa xong :<
+
+-- 12. Create Invoice from order  
+-- Issue an Invoice
+-- OrderID as a parameter. Change OrderStatus to Completed
+-- Add new Invoice.
+-- Update card points (if exists)
+-- Check and upgrade card if conditions are met
+-- Mark table as "free".
 GO
 CREATE OR ALTER PROCEDURE usp_CreateInvoice (
-    @OrderID INT
+    @OrderID INT,
+	@PaymentMethod NVARCHAR(50),
+	@TaxRate DECIMAL(4,3) = 0.1,
+	@CouponID INT
 )
 AS
 SET XACT_ABORT, NOCOUNT ON
 BEGIN TRY
 	BEGIN TRANSACTION;
+	DECLARE @DiscountAmount DECIMAL(19,4) = 0,
+			@DiscountRate DECIMAL(4,3),
+            @ShippingCost DECIMAL(19,4),
+            @CardTypeDiscountRate DECIMAL(4,3) = 0.0,
+			@OrderStatus CHAR(10),  
+			@Subtotal DECIMAL(19,4),
+			@Total DECIMAL(19,4),
+			@CardType INT,
+			@CustID INT;
+
+	 SELECT @CustID = CustID FROM [Order] WHERE OrderID = @OrderID;
+            
+	 SELECT @Subtotal = SUM(UnitPrice * Quantity)
+	 FROM OrderDetails
+	 WHERE OrderID = @OrderID;
+
+	 -- Check current Order status
+     SELECT @OrderStatus = OrderStatus 
+	 FROM [Order]
+     WHERE OrderID = @OrderID;
+
+	-- If the order is already completed or cancelled
+    IF @OrderStatus IN ('COMPLETED', 'CANCELLED')
+        THROW 51000, 'Order is already completed or cancelled', 1;
+
+	-- Get the OrderType to determine the ShippingCost
+    DECLARE @OrderType CHAR(1);
+    SELECT @OrderType = OrderType FROM [Order] WHERE OrderID = @OrderID;
+
+    IF @OrderType = 'I'
+    BEGIN
+        SET @ShippingCost = 0;
+    END
+    ELSE 
+    BEGIN
+        SET @ShippingCost = 30000;
+    END
+
+	-- Check coupon
+     IF @CouponID IS NOT NULL
+     BEGIN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM Coupon c
+            WHERE c.CouponID = @CouponID
+                AND c.ExpiryDate >= GETDATE()
+                AND c.RemainingUsage > 0
+                AND c.MinPurchase <= @Subtotal
+                AND c.MinMembershipRequirement <= (
+                    SELECT mc.CardType
+                    FROM MembershipCard mc
+                    INNER JOIN [Order] o ON mc.CustID = o.CustID
+                    WHERE o.OrderID = @OrderID
+                )
+        )
+        BEGIN
+            ;THROW 51000, 'The coupon is invalid or does not meet the requirements', 1;
+        END
+
+        SELECT @DiscountAmount = 
+            CASE 
+                WHEN c.DiscountFlat IS NOT NULL THEN c.DiscountFlat
+                WHEN c.DiscountRate IS NOT NULL THEN 
+                    CASE 
+                        WHEN (c.DiscountRate * @Subtotal) > c.MaxDiscount THEN c.MaxDiscount
+                        ELSE c.DiscountRate * @Subtotal
+                    END
+                ELSE 0 
+            END
+        FROM Coupon c
+        WHERE c.CouponID = @CouponID;
+
+		-- Deduct the coupon usage
+        UPDATE Coupon SET RemainingUsage = RemainingUsage - 1 WHERE CouponID = @CouponID;
+    END
+
+	-- Get the CardType discount rate if the customer has a membership card
+    SELECT @CardTypeDiscountRate = ct.DiscountRate, @CardType = mc.CardType
+    FROM MembershipCard mc
+    INNER JOIN CardType ct ON mc.CardType = ct.CardTypeID
+    WHERE mc.CustID = @CustID
 	
-	INSERT INTO Invoice (OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, CouponID)
-	VALUES (@OrderID);
+    -- Insert Invoice 
+    INSERT INTO Invoice (OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, InvoiceDate, CouponID)
+    VALUES (@OrderID, @Subtotal, @CardTypeDiscountRate, @TaxRate, @ShippingCost, @PaymentMethod, GETDATE(), @CouponID);
+
+	SET @Total = (@Subtotal * (1 - @CardTypeDiscountRate)  - @DiscountAmount + @ShippingCost) * ( 1 + @TaxRate)
+
+    -- Update Membership Card points if exists
+    UPDATE MembershipCard 
+    SET Points = Points + FLOOR(@Total / 100000)
+    WHERE CustID = @CustID
+
+	-- Check and upgrade membership card type if conditions are met
+	IF @CardType IN (1,2)
+	BEGIN
+		-- Get the required points for upgrading to the next card type
+		DECLARE @NextCardType INT = @CardType + 1;
+		DECLARE @PointsRequiredForUpgrade INT = (SELECT PointsRequiredForUpgrade FROM CardType WHERE CardTypeID = @NextCardType);
+
+		IF (SELECT Points FROM MembershipCard WHERE CustID = @CustID) >= @PointsRequiredForUpgrade
+		BEGIN
+			-- Upgrade the membership card type if sufficient points are available
+			UPDATE MembershipCard
+			SET CardType = @NextCardType
+			WHERE CustID = @CustID;
+		END
+	END
+
+	-- Mark the table as "free" if the order is for dine-in
+	UPDATE [Table]
+    SET isVacant = 1                  
+    WHERE EXISTS (
+        SELECT 1 
+        FROM DineInOrder dio
+        WHERE dio.OrderID = @OrderID 
+            AND [Table].BranchID = dio.BranchID 
+            AND [Table].TableCode = dio.TableCode
+    );
+	-- Update OrderStatus to Completed
+    UPDATE [Order] SET OrderStatus = 'COMPLETED' WHERE OrderID = @OrderID;
 
 	COMMIT TRANSACTION;
 END TRY
@@ -559,4 +692,3 @@ BEGIN CATCH
 	;THROW
 END CATCH
 GO
-*/

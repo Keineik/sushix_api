@@ -8,7 +8,7 @@
  *
  * 3. Set the following environment variable to your own data path.
  */
-:setvar DataPath "D:\Projects\sushix_api\src\sql\data\"
+:setvar DataPath "D:\Nam3\HK1\ADB\Project\sushix_api\src\sql\data\"
 
 :setvar DatabaseName "SushiX"
 GO
@@ -269,7 +269,7 @@ CREATE TABLE DineInOrder (
 
 	CONSTRAINT FK_DineInOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
 	CONSTRAINT FK_DineInOrder_Table FOREIGN KEY (BranchID, TableCode) REFERENCES [Table](BranchID, TableCode),
-	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES [Order](OrderID)
+	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES Reservation(RsID)
 );
 
 CREATE TABLE DeliveryOrder (
@@ -292,7 +292,9 @@ CREATE TABLE Coupon (
     ExpiryDate DATE NOT NULL,
     TotalUsageLimit INT NOT NULL,
 	RemainingUsage INT NOT NULL,
-    MinMembershipRequirement INT
+    MinMembershipRequirement INT,
+
+	CONSTRAINT FK_Coupon_CardType FOREIGN KEY (MinMembershipRequirement) REFERENCES CardType(CardTypeID)
 );
 
 CREATE TABLE Invoice(
@@ -306,7 +308,8 @@ CREATE TABLE Invoice(
 	InvoiceDate DATETIME DEFAULT GETDATE(),
 	CouponID INT,
 
-	CONSTRAINT FK_Invoice_Coupon FOREIGN KEY (InvoiceID) REFERENCES Coupon(CouponID)
+	CONSTRAINT FK_Invoice_Coupon FOREIGN KEY (CouponID) REFERENCES Coupon(CouponID),
+	CONSTRAINT FK_Invoice_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID)
 );
 
 CREATE TABLE CustomerRating (
@@ -417,5 +420,6 @@ WITH (
 	FIRSTROW = 2,
 	FORMAT = 'CSV'
 );
+
 
 -- ******************************************************
