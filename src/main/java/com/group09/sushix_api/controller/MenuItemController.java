@@ -23,13 +23,14 @@ public class MenuItemController {
 
     @GetMapping
     public ApiResponse<Map<String, Object>> fetchItems(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "18") int limit,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "18") Integer limit,
             @RequestParam(defaultValue = "") String searchTerm,
-            @RequestParam(defaultValue = "0") int categoryId,
-            @RequestParam(defaultValue = "0") int branchId,
+            @RequestParam(defaultValue = "0") Integer categoryId,
+            @RequestParam(defaultValue = "0") Integer branchId,
+            @RequestParam(defaultValue = "0") Boolean filterShippable,
             @RequestParam(defaultValue = "ID") String sortKey,
-            @RequestParam(defaultValue = "false") boolean sortDirection
+            @RequestParam(defaultValue = "false") Boolean sortDirection
     ) {
         Map<String, Object> result = menuItemService.fetchItems(
                 page,
@@ -37,6 +38,7 @@ public class MenuItemController {
                 searchTerm,
                 categoryId,
                 branchId,
+                filterShippable,
                 sortKey,
                 sortDirection
         );
