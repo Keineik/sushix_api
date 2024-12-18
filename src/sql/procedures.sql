@@ -141,7 +141,9 @@ BEGIN
 		c.CustEmail
 	FROM Reservation r
 	JOIN Customer c ON r.CustID = c.CustID
-	WHERE (r.RsID LIKE @Search)
+	WHERE (r.RsID LIKE @Search OR  (c.CustName LIKE @Search) 
+         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
+	
 		AND (@BranchID = 0 OR r.BranchID = @BranchID)
 	ORDER BY 
     CASE WHEN @SortDirection = 0 THEN r.RsDateTime END,
@@ -209,7 +211,8 @@ BEGIN
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
 	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search)
+	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
+        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR 
@@ -266,7 +269,8 @@ BEGIN
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
 	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search)
+	WHERE (o.OrderID LIKE @Search OR (c.CustName LIKE @Search) 
+         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR o.OrderType = @OrderType)
@@ -283,10 +287,12 @@ GO
 -- - Sort by total price.
 
 CREATE OR ALTER PROC usp_FetchInvoices
-    @Page INT = 1,
-    @Limit INT = 18,
-    @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID
+    @Page INT = 1, 
+    @Limit INT = 18, 
+    @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
     @BranchID INT = 0, -- Filter by BranchID
+    @StartDate DATE = NULL, -- Filter by Start Date
+    @EndDate DATE = NULL, -- Filter by End Date
     @SortDirection BIT = 0 -- 0: ASC, 1: DESC
 AS
 BEGIN
@@ -309,8 +315,13 @@ BEGIN
     JOIN [Order] o ON i.OrderID = o.OrderID
     JOIN Customer c ON o.CustID = c.CustID
     LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-    WHERE (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search)
+    WHERE 
+        (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search 
+         OR c.CustName LIKE @Search 
+         OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
+        AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
+        AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
     GROUP BY 
         i.InvoiceID,
         i.OrderID,
@@ -322,13 +333,14 @@ BEGIN
         c.CustEmail
     ORDER BY 
         CASE 
-            WHEN @SortDirection = 0 THEN SUM(od.UnitPrice * od.Quantity)
+            WHEN @SortDirection = 0 THEN ISNULL(SUM(od.UnitPrice * od.Quantity), 0)
         END ASC,
         CASE 
-            WHEN @SortDirection = 1 THEN SUM(od.UnitPrice * od.Quantity)
+            WHEN @SortDirection = 1 THEN ISNULL(SUM(od.UnitPrice * od.Quantity), 0)
         END DESC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
+
 
 GO
 -- 
@@ -338,7 +350,7 @@ GO
 CREATE OR ALTER PROC usp_FetchCustomers
     @Page INT = 1,
     @Limit INT = 18,
-    @SearchTerm NVARCHAR(100) = '' -- Search by CustID or CustName
+    @SearchTerm NVARCHAR(100) = '' 
 AS
 BEGIN
     SET NOCOUNT ON;
