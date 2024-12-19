@@ -692,3 +692,71 @@ BEGIN CATCH
 	;THROW
 END CATCH
 GO
+
+-- 14. Transfer staff
+-- Update BranchID, Department.
+-- Add work history.
+
+CREATE OR ALTER PROC TransferStaff
+    @StaffID INT,         
+    @NewBranchID INT,     
+    @NewDeptName VARCHAR(10), 
+    @StartDate DATE      
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+    BEGIN TRANSACTION;
+
+	-- Validate that the new BranchID and DeptName exist in the Department table
+	IF NOT EXISTS (
+		SELECT 1 
+		FROM Department
+		WHERE BranchID = @NewBranchID AND DeptName = @NewDeptName
+	)
+	BEGIN
+		;THROW 51000, 'Invalid BranchID or DeptName.', 1;
+	END
+
+	DECLARE @CurrentBranchID INT, @CurrentDeptName VARCHAR(10);
+
+	SELECT 
+		@CurrentBranchID = BranchID,
+		@CurrentDeptName = DeptName
+	FROM Staff
+	WHERE StaffID = @StaffID;
+
+	-- If there is no change in branch or department
+	IF @CurrentBranchID = @NewBranchID AND @CurrentDeptName = @NewDeptName
+	BEGIN
+		;THROW 51000, 'BranchID and Department are unchanged.', 1;
+	END
+
+	-- Update the QuitDate of the current work history
+    UPDATE WorkHistory
+    SET QuitDate = @StartDate
+    WHERE StaffID = @StaffID 
+		AND DeptID = (SELECT DeptID FROM Department WHERE BranchID = @CurrentBranchID AND DeptName = @CurrentDeptName)
+        AND QuitDate IS NULL;
+
+	-- Add a new record to the WorkHistory table for the new department
+	INSERT INTO WorkHistory (StaffID, StartDate, DeptID)
+	VALUES (
+		@StaffID,
+		@StartDate,
+		(SELECT DeptID FROM Department WHERE BranchID = @NewBranchID AND DeptName = @NewDeptName)
+	);
+
+	-- Update the BranchID and DeptName in the Staff table
+	UPDATE Staff
+	SET 
+		BranchID = @NewBranchID,
+		DeptName = @NewDeptName
+	WHERE StaffID = @StaffID;
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH;
+GO

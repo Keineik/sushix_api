@@ -292,9 +292,9 @@ CREATE TABLE Coupon (
     ExpiryDate DATE NOT NULL,
     TotalUsageLimit INT NOT NULL,
 	RemainingUsage INT NOT NULL,
-    MinMembershipRequirement INT,
+    MinMembershipRequirement INT
 
-	CONSTRAINT FK_Coupon_CardType FOREIGN KEY (MinMembershipRequirement) REFERENCES CardType(CardTypeID)
+		CONSTRAINT FK_Coupon_CardType FOREIGN KEY (MinMembershipRequirement) REFERENCES CardType(CardTypeID),
 );
 
 CREATE TABLE Invoice(
@@ -420,6 +420,5 @@ WITH (
 	FIRSTROW = 2,
 	FORMAT = 'CSV'
 );
-
 
 -- ******************************************************
