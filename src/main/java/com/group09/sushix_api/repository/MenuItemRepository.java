@@ -12,19 +12,21 @@ import com.group09.sushix_api.entity.MenuItem;
 public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
     @Procedure(procedureName = "usp_FetchItems")
     List<MenuItem> fetchItems(
-            @Param("Page") int page,
-            @Param("Limit") int limit,
+            @Param("Page") Integer page,
+            @Param("Limit") Integer limit,
             @Param("SearchTerm") String searchTerm,
-            @Param("CategoryID") int categoryId,
-            @Param("BranchID") int branchId,
+            @Param("CategoryID") Integer categoryId,
+            @Param("BranchID") Integer branchId,
+            @Param("FilterShippable") Boolean filterShippable,
             @Param("SortKey") String sortKey,
-            @Param("SortDirection") boolean sortDirection
+            @Param("SortDirection") Boolean sortDirection
     );
 
     @Procedure(procedureName = "usp_CountItems")
     int countItems(
             @Param("SearchTerm") String searchTerm,
-            @Param("CategoryID") int categoryId,
-            @Param("BranchID") int branchId
+            @Param("CategoryID") Integer categoryId,
+            @Param("BranchID") Integer branchId,
+            @Param("FilterShippable") Boolean filterShippable
     );
 }

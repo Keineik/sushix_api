@@ -3,26 +3,24 @@ GO
 
 --1. Fetch Items
 ---Fetch items with pagination.
----Search by name, ItemID. (?)
+---Search by ItemName
 ---Filter by BranchID, category.
 ---Sort by price, ID.
-
-
-
 create or alter proc usp_FetchItems
     @Page int = 1,
     @Limit int = 18,
-    @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
+    @SearchTerm nvarchar(100) = '', -- ItemName
     @CategoryID int = 0, -- Filter
     @BranchID int = 0, -- Filter
-    @SortKey varchar(10) = 'ID', -- Price or ID
+	@FilterShippable bit = 0, --0: no filter, 1: yes XD
+    @SortKey varchar(10) = 'ID', -- 'price' or 'ID'
     @SortDirection bit = 0 -- 0: asc, 1: desc
 as
 begin
 	SET NOCOUNT ON;
 	
     declare @Offset int = (@Page - 1) * @Limit;
-    declare @Search nvarchar(100) =  @SearchTerm + '%';
+    declare @Search nvarchar(100) = @SearchTerm + '%';
 
 	select mi.ItemID,
 		mi.ItemName,
@@ -32,34 +30,27 @@ begin
 		mi.SoldQuantity,
 		mi.IsDiscontinued,
 		mi.ImgUrl
-	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
-	where (mi.ItemName like @Search or mi.ItemID like @Search)
+	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID)
+	where (mi.ItemName like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
-		and (@BranchID = 0 or bmi.BranchID = @BranchID)
+		and (@BranchID = 0 or bmi.BranchID = @CategoryID)
+		and (@FilterShippable = 0 or bmi.IsShippable = 1)
 	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.SoldQuantity, mi.IsDiscontinued, mi.ImgUrl
 	order by 
-    case 
-        when @SortKey = 'price' AND @SortDirection = 0 then UnitPrice
-        when @SortKey = 'ID' AND @SortDirection = 0 then mi.ItemID
-    end asc,
-    case 
-        when @SortKey = 'price' AND @SortDirection = 1 then UnitPrice
-        when @SortKey = 'ID' AND @SortDirection = 1 then mi.ItemID
-    end desc
+    case when @SortKey = 'price' AND @SortDirection = 0 then UnitPrice end,
+    case when @SortKey = 'ID' AND @SortDirection = 0 then mi.ItemID end,
+    case when @SortKey = 'price' AND @SortDirection = 1 then UnitPrice end desc,
+    case when @SortKey = 'ID' AND @SortDirection = 1 then mi.ItemID end desc
     offset @Offset rows fetch next @Limit rows only
-    OPTION(RECOMPILE)
 end;
-go
 
---create nonclustered index ix_menuitem_itemname on MenuItem (ItemName)
-
---exec usp_FetchItems @SearchTerm = N'Bánh'
 
 GO
 create or alter proc usp_CountItems
     @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
     @CategoryID int = 0, -- Filter
     @BranchID int = 0, -- Filter
+	@FilterShippable bit = 0, --0: no filter, 1: yes XD
 	@count int out
 as
 begin
@@ -67,11 +58,12 @@ begin
 
     declare @Search nvarchar(100) = '%' + @SearchTerm + '%';
 
-	select count(distinct(mi.ItemID))
+	select @count = count(distinct(mi.ItemID))
 	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
 	where (mi.ItemName like @Search or mi.ItemID like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
 		and (@BranchID = 0 or bmi.BranchID = @BranchID)
+		and (@FilterShippable = 0 or bmi.IsShippable = 1)
 end;
 GO
 
@@ -124,7 +116,7 @@ GO
 -- Search by ReservationID. 
 -- Filter by BranchID. 
 -- Sort by RsDatetime.
-CREATE OR ALTER PROC usp_FetchReservation
+CREATE OR ALTER PROC usp_FetchReservations
 	@Page INT = 1,
 	@Limit INT = 18,
 	@SearchTerm NVARCHAR(100) = '', -- ReservationID
@@ -135,7 +127,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @Offset INT = (@Page - 1) * @Limit;
-	DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
 	SELECT 
 		r.RsID,
@@ -149,20 +141,32 @@ BEGIN
 		c.CustEmail
 	FROM Reservation r
 	JOIN Customer c ON r.CustID = c.CustID
-	WHERE (r.RsID LIKE @Search)
+	WHERE (r.RsID LIKE @Search OR  (c.CustName LIKE @Search) 
+         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
+	
 		AND (@BranchID = 0 OR r.BranchID = @BranchID)
 	ORDER BY 
-    CASE 
-		WHEN @SortDirection = 0 THEN r.RsDateTime
-    END ASC,
-    CASE 
-		WHEN @SortDirection = 1 THEN r.RsDateTime
-    END DESC
+    CASE WHEN @SortDirection = 0 THEN r.RsDateTime END,
+    CASE WHEN @SortDirection = 1 THEN r.RsDateTime END DESC
 	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO
 
-EXEC usp_FetchReservation
+CREATE OR ALTER PROC usp_CountReservation
+	@SearchTerm NVARCHAR(100) = '', -- ReservationID
+	@BranchID INT = 0 -- Filter
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
+
+	SELECT COUNT(DISTINCT(r.RsID))
+	FROM Reservation r
+	JOIN Customer c ON r.CustID = c.CustID
+	WHERE (r.RsID LIKE @Search)
+		AND (@BranchID = 0 OR r.BranchID = @BranchID)
+END
+GO
 
 Go
 -- 
@@ -207,7 +211,8 @@ BEGIN
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
 	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search)
+	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
+        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR 
@@ -233,8 +238,44 @@ BEGIN
 	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO
+exec usp_FetchOrders
+GO
+CREATE OR ALTER PROC usp_CountOrders
+	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
+	@BranchID INT = 0, -- Filter by Branch
+	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
+	@OrderType CHAR(1) = '' -- Filter by OrderType ('D' for DeliveryOrder, 'I' for DineInOrder)
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
 
-EXEC usp_FetchOrders
+	SELECT 
+		o.OrderID,
+		o.OrderDateTime,
+		o.OrderStatus,
+		o.BranchID,
+		c.CustName,
+		c.CustPhoneNumber,
+		c.CustEmail,
+		CASE 
+			WHEN do.OrderID IS NOT NULL THEN 'Delivery'
+			WHEN dio.OrderID IS NOT NULL THEN 'Dine-In'
+			ELSE 'Unknown'
+		END AS OrderType,
+		ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS EstimatedPrice
+	FROM [Order] o
+	JOIN Customer c ON o.CustID = c.CustID
+	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
+	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
+	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
+	WHERE (o.OrderID LIKE @Search OR (c.CustName LIKE @Search) 
+         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+		AND (@BranchID = 0 OR o.BranchID = @BranchID)
+		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
+		AND (@OrderType = '' OR o.OrderType = @OrderType)
+END
+
 
 GO
 -- 
@@ -246,10 +287,12 @@ GO
 -- - Sort by total price.
 
 CREATE OR ALTER PROC usp_FetchInvoices
-    @Page INT = 1,
-    @Limit INT = 18,
-    @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID
+    @Page INT = 1, 
+    @Limit INT = 18, 
+    @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
     @BranchID INT = 0, -- Filter by BranchID
+    @StartDate DATE = NULL, -- Filter by Start Date
+    @EndDate DATE = NULL, -- Filter by End Date
     @SortDirection BIT = 0 -- 0: ASC, 1: DESC
 AS
 BEGIN
@@ -272,8 +315,13 @@ BEGIN
     JOIN [Order] o ON i.OrderID = o.OrderID
     JOIN Customer c ON o.CustID = c.CustID
     LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-    WHERE (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search)
+    WHERE 
+        (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search 
+         OR c.CustName LIKE @Search 
+         OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
+        AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
+        AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
     GROUP BY 
         i.InvoiceID,
         i.OrderID,
@@ -285,13 +333,14 @@ BEGIN
         c.CustEmail
     ORDER BY 
         CASE 
-            WHEN @SortDirection = 0 THEN SUM(od.UnitPrice * od.Quantity)
+            WHEN @SortDirection = 0 THEN ISNULL(SUM(od.UnitPrice * od.Quantity), 0)
         END ASC,
         CASE 
-            WHEN @SortDirection = 1 THEN SUM(od.UnitPrice * od.Quantity)
+            WHEN @SortDirection = 1 THEN ISNULL(SUM(od.UnitPrice * od.Quantity), 0)
         END DESC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
+
 
 GO
 -- 
@@ -301,7 +350,7 @@ GO
 CREATE OR ALTER PROC usp_FetchCustomers
     @Page INT = 1,
     @Limit INT = 18,
-    @SearchTerm NVARCHAR(100) = '' -- Search by CustID or CustName
+    @SearchTerm NVARCHAR(100) = '' 
 AS
 BEGIN
     SET NOCOUNT ON;

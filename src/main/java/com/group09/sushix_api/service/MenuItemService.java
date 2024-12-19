@@ -37,13 +37,14 @@ public class MenuItemService {
 
     @Transactional
     public Map<String, Object> fetchItems(
-            int page,
-            int limit,
+            Integer page,
+            Integer limit,
             String searchTerm,
-            int categoryId,
-            int branchId,
+            Integer categoryId,
+            Integer branchId,
+            Boolean filterShippable,
             String sortKey,
-            boolean sortDirection
+            Boolean sortDirection
     ) {
         List<MenuItem> items = menuItemRepository.fetchItems(
                 page,
@@ -51,6 +52,7 @@ public class MenuItemService {
                 searchTerm,
                 categoryId,
                 branchId,
+                filterShippable,
                 sortKey,
                 sortDirection
         );
@@ -58,7 +60,8 @@ public class MenuItemService {
         int totalCount = menuItemRepository.countItems(
                 searchTerm,
                 categoryId,
-                branchId
+                branchId,
+                filterShippable
         );
         List<MenuItemResponse> menuItemResponses = items.stream()
                 .map(menuItemMapper::toMenuItemResponse)
