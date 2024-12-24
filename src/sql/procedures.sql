@@ -3,24 +3,26 @@ GO
 
 --1. Fetch Items
 ---Fetch items with pagination.
----Search by ItemName
+---Search by name, ItemID. (?)
 ---Filter by BranchID, category.
 ---Sort by price, ID.
+
+
+
 create or alter proc usp_FetchItems
     @Page int = 1,
     @Limit int = 18,
-    @SearchTerm nvarchar(100) = '', -- ItemName
+    @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
     @CategoryID int = 0, -- Filter
     @BranchID int = 0, -- Filter
-	@FilterShippable bit = 0, --0: no filter, 1: yes XD
-    @SortKey varchar(10) = 'ID', -- 'price' or 'ID'
+    @SortKey varchar(10) = 'ID', -- Price or ID
     @SortDirection bit = 0 -- 0: asc, 1: desc
 as
 begin
 	SET NOCOUNT ON;
 	
     declare @Offset int = (@Page - 1) * @Limit;
-    declare @Search nvarchar(100) = @SearchTerm + '%';
+    declare @Search nvarchar(100) = '%' + @SearchTerm + '%';
 
 	select mi.ItemID,
 		mi.ItemName,
@@ -30,27 +32,28 @@ begin
 		mi.SoldQuantity,
 		mi.IsDiscontinued,
 		mi.ImgUrl
-	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID)
-	where (mi.ItemName like @Search)
+	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
+	where (mi.ItemName like @Search or mi.ItemID like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
-		and (@BranchID = 0 or bmi.BranchID = @CategoryID)
-		and (@FilterShippable = 0 or bmi.IsShippable = 1)
+		and (@BranchID = 0 or bmi.BranchID = @BranchID)
 	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.SoldQuantity, mi.IsDiscontinued, mi.ImgUrl
 	order by 
-    case when @SortKey = 'price' AND @SortDirection = 0 then UnitPrice end,
-    case when @SortKey = 'ID' AND @SortDirection = 0 then mi.ItemID end,
-    case when @SortKey = 'price' AND @SortDirection = 1 then UnitPrice end desc,
-    case when @SortKey = 'ID' AND @SortDirection = 1 then mi.ItemID end desc
-    offset @Offset rows fetch next @Limit rows only
+    case 
+        when @SortKey = 'price' AND @SortDirection = 0 then UnitPrice
+        when @SortKey = 'ID' AND @SortDirection = 0 then mi.ItemID
+    end asc,
+    case 
+        when @SortKey = 'price' AND @SortDirection = 1 then UnitPrice
+        when @SortKey = 'ID' AND @SortDirection = 1 then mi.ItemID
+    end desc
+    offset @Offset rows fetch next @Limit rows only;
+    
 end;
-
-
 GO
 create or alter proc usp_CountItems
     @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
     @CategoryID int = 0, -- Filter
     @BranchID int = 0, -- Filter
-	@FilterShippable bit = 0, --0: no filter, 1: yes XD
 	@count int out
 as
 begin
@@ -58,12 +61,11 @@ begin
 
     declare @Search nvarchar(100) = '%' + @SearchTerm + '%';
 
-	select @count = count(distinct(mi.ItemID))
+	select count(distinct(mi.ItemID))
 	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
 	where (mi.ItemName like @Search or mi.ItemID like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
 		and (@BranchID = 0 or bmi.BranchID = @BranchID)
-		and (@FilterShippable = 0 or bmi.IsShippable = 1)
 end;
 GO
 
@@ -127,7 +129,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @Offset INT = (@Page - 1) * @Limit;
-	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
+	DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
 
 	SELECT 
 		r.RsID,
@@ -141,32 +143,20 @@ BEGIN
 		c.CustEmail
 	FROM Reservation r
 	JOIN Customer c ON r.CustID = c.CustID
-	WHERE (r.RsID LIKE @Search OR  (c.CustName LIKE @Search) 
-         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
-	
+	WHERE (r.RsID LIKE @Search OR (c.CustName LIKE @Search) OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
 		AND (@BranchID = 0 OR r.BranchID = @BranchID)
 	ORDER BY 
-    CASE WHEN @SortDirection = 0 THEN r.RsDateTime END,
-    CASE WHEN @SortDirection = 1 THEN r.RsDateTime END DESC
+    CASE 
+		WHEN @SortDirection = 0 THEN r.RsDateTime
+    END ASC,
+    CASE 
+		WHEN @SortDirection = 1 THEN r.RsDateTime
+    END DESC
 	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO
 
-CREATE OR ALTER PROC usp_CountReservation
-	@SearchTerm NVARCHAR(100) = '', -- ReservationID
-	@BranchID INT = 0 -- Filter
-AS
-BEGIN
-	SET NOCOUNT ON;
-	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
-
-	SELECT COUNT(DISTINCT(r.RsID))
-	FROM Reservation r
-	JOIN Customer c ON r.CustID = c.CustID
-	WHERE (r.RsID LIKE @Search)
-		AND (@BranchID = 0 OR r.BranchID = @BranchID)
-END
-GO
+EXEC usp_FetchReservations
 
 Go
 -- 
@@ -179,7 +169,7 @@ Go
 CREATE OR ALTER PROC usp_FetchOrders
 	@Page INT = 1,
 	@Limit INT = 18,
-	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
+	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID, CustName or CustPhoneNumber
 	@BranchID INT = 0, -- Filter by Branch
 	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
 	@OrderType NVARCHAR(10) = '', -- Filter by OrderType ('Dine-In', 'Delivery')
@@ -211,8 +201,7 @@ BEGIN
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
 	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
-        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+	WHERE ((o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR 
@@ -238,44 +227,8 @@ BEGIN
 	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO
-exec usp_FetchOrders
-GO
-CREATE OR ALTER PROC usp_CountOrders
-	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
-	@BranchID INT = 0, -- Filter by Branch
-	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
-	@OrderType CHAR(1) = '' -- Filter by OrderType ('D' for DeliveryOrder, 'I' for DineInOrder)
-AS
-BEGIN
-	SET NOCOUNT ON;
-	DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
 
-	SELECT 
-		o.OrderID,
-		o.OrderDateTime,
-		o.OrderStatus,
-		o.BranchID,
-		c.CustName,
-		c.CustPhoneNumber,
-		c.CustEmail,
-		CASE 
-			WHEN do.OrderID IS NOT NULL THEN 'Delivery'
-			WHEN dio.OrderID IS NOT NULL THEN 'Dine-In'
-			ELSE 'Unknown'
-		END AS OrderType,
-		ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS EstimatedPrice
-	FROM [Order] o
-	JOIN Customer c ON o.CustID = c.CustID
-	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
-	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
-	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search OR (c.CustName LIKE @Search) 
-         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
-		AND (@BranchID = 0 OR o.BranchID = @BranchID)
-		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
-		AND (@OrderType = '' OR o.OrderType = @OrderType)
-END
-
+EXEC usp_FetchOrders
 
 GO
 -- 
@@ -298,9 +251,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Calculate Offset for Pagination
     DECLARE @Offset INT = (@Page - 1) * @Limit;
     DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
 
+    -- Fetch Invoice Data
     SELECT 
         i.InvoiceID,
         i.OrderID,
@@ -316,10 +271,13 @@ BEGIN
     JOIN Customer c ON o.CustID = c.CustID
     LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
     WHERE 
+        -- Search Filters
         (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search 
          OR c.CustName LIKE @Search 
          OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+        -- Branch Filter
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
+        -- Date Filter
         AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
         AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
     GROUP BY 
@@ -350,7 +308,7 @@ GO
 CREATE OR ALTER PROC usp_FetchCustomers
     @Page INT = 1,
     @Limit INT = 18,
-    @SearchTerm NVARCHAR(100) = '' 
+    @SearchTerm NVARCHAR(100) = '' -- Search by CustID or CustName
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -366,7 +324,7 @@ BEGIN
         CustPhoneNumber,
         CustCitizenID
     FROM Customer
-    WHERE (CAST(CustID AS NVARCHAR) LIKE @Search OR CustName LIKE @Search)
+    WHERE (CAST(CustID AS NVARCHAR) LIKE @Search OR CustName LIKE @Search OR (CAST(CustPhoneNumber AS NVARCHAR) LIKE @Search)) 
     ORDER BY CustID
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
@@ -564,7 +522,7 @@ BEGIN TRY
 	WHERE OrderID = @OrderID;
 
 	-- Check if Order is not cancelled or completed
-	IF (@OrderStatus IN ('CANCELLED', 'COMPLETED'))
+	IF (@OrderStatus NOT IN ('CANCELLED', 'COMPLETED'))
 		THROW 51000, 'Order must not be cancelled or completed', 1;
 
 	-- Check if that branch serve that item
@@ -593,7 +551,6 @@ BEGIN CATCH
 END CATCH
 GO
 
-
 -- 12. Create Invoice from order  
 -- Issue an Invoice
 -- OrderID as a parameter. Change OrderStatus to Completed
@@ -621,26 +578,21 @@ BEGIN TRY
 			@Total DECIMAL(19,4),
 			@CardType INT,
 			@CustID INT;
-
 	 SELECT @CustID = CustID FROM [Order] WHERE OrderID = @OrderID;
             
 	 SELECT @Subtotal = SUM(UnitPrice * Quantity)
 	 FROM OrderDetails
 	 WHERE OrderID = @OrderID;
-
 	 -- Check current Order status
      SELECT @OrderStatus = OrderStatus 
 	 FROM [Order]
      WHERE OrderID = @OrderID;
-
 	-- If the order is already completed or cancelled
     IF @OrderStatus IN ('COMPLETED', 'CANCELLED')
         THROW 51000, 'Order is already completed or cancelled', 1;
-
 	-- Get the OrderType to determine the ShippingCost
     DECLARE @OrderType CHAR(1);
     SELECT @OrderType = OrderType FROM [Order] WHERE OrderID = @OrderID;
-
     IF @OrderType = 'I'
     BEGIN
         SET @ShippingCost = 0;
@@ -649,7 +601,6 @@ BEGIN TRY
     BEGIN
         SET @ShippingCost = 30000;
     END
-
 	-- Check coupon
      IF @CouponID IS NOT NULL
      BEGIN
@@ -670,7 +621,6 @@ BEGIN TRY
         BEGIN
             ;THROW 51000, 'The coupon is invalid or does not meet the requirements', 1;
         END
-
         SELECT @DiscountAmount = 
             CASE 
                 WHEN c.DiscountFlat IS NOT NULL THEN c.DiscountFlat
@@ -683,35 +633,29 @@ BEGIN TRY
             END
         FROM Coupon c
         WHERE c.CouponID = @CouponID;
-
 		-- Deduct the coupon usage
         UPDATE Coupon SET RemainingUsage = RemainingUsage - 1 WHERE CouponID = @CouponID;
     END
-
 	-- Get the CardType discount rate if the customer has a membership card
     SELECT @CardTypeDiscountRate = ct.DiscountRate, @CardType = mc.CardType
     FROM MembershipCard mc
     INNER JOIN CardType ct ON mc.CardType = ct.CardTypeID
     WHERE mc.CustID = @CustID
-	
+
     -- Insert Invoice 
     INSERT INTO Invoice (OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, InvoiceDate, CouponID)
     VALUES (@OrderID, @Subtotal, @CardTypeDiscountRate, @TaxRate, @ShippingCost, @PaymentMethod, GETDATE(), @CouponID);
-
 	SET @Total = (@Subtotal * (1 - @CardTypeDiscountRate)  - @DiscountAmount + @ShippingCost) * ( 1 + @TaxRate)
-
     -- Update Membership Card points if exists
     UPDATE MembershipCard 
     SET Points = Points + FLOOR(@Total / 100000)
     WHERE CustID = @CustID
-
 	-- Check and upgrade membership card type if conditions are met
 	IF @CardType IN (1,2)
 	BEGIN
 		-- Get the required points for upgrading to the next card type
 		DECLARE @NextCardType INT = @CardType + 1;
 		DECLARE @PointsRequiredForUpgrade INT = (SELECT PointsRequiredForUpgrade FROM CardType WHERE CardTypeID = @NextCardType);
-
 		IF (SELECT Points FROM MembershipCard WHERE CustID = @CustID) >= @PointsRequiredForUpgrade
 		BEGIN
 			-- Upgrade the membership card type if sufficient points are available
@@ -720,7 +664,6 @@ BEGIN TRY
 			WHERE CustID = @CustID;
 		END
 	END
-
 	-- Mark the table as "free" if the order is for dine-in
 	UPDATE [Table]
     SET isVacant = 1                  
