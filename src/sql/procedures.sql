@@ -44,7 +44,6 @@ begin
     offset @Offset rows fetch next @Limit rows only
 end;
 
-
 GO
 create or alter proc usp_CountItems
     @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
@@ -190,7 +189,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @Offset INT = (@Page - 1) * @Limit;
-	DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
 	SELECT 
 		o.OrderID,
@@ -248,32 +247,21 @@ CREATE OR ALTER PROC usp_CountOrders
 AS
 BEGIN
 	SET NOCOUNT ON;
-	DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
-	SELECT 
-		o.OrderID,
-		o.OrderDateTime,
-		o.OrderStatus,
-		o.BranchID,
-		c.CustName,
-		c.CustPhoneNumber,
-		c.CustEmail,
-		CASE 
-			WHEN do.OrderID IS NOT NULL THEN 'Delivery'
-			WHEN dio.OrderID IS NOT NULL THEN 'Dine-In'
-			ELSE 'Unknown'
-		END AS OrderType,
-		ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS EstimatedPrice
+	SELECT COUNT(DISTINCT o.OrderID)
 	FROM [Order] o
 	JOIN Customer c ON o.CustID = c.CustID
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
 	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search OR (c.CustName LIKE @Search) 
-         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
+        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
-		AND (@OrderType = '' OR o.OrderType = @OrderType)
+		AND (@OrderType = '' OR 
+			(@OrderType = 'Delivery' AND do.OrderID IS NOT NULL) OR 
+			(@OrderType = 'Dine-In' AND dio.OrderID IS NOT NULL))
 END
 
 
