@@ -1,0 +1,6 @@
+CustID,CustName,CustEmail,CustGender,CustPhoneNumber,CustCitizenID
+1,Nguyen Van A,nguyen@example.com,M,0912345678,123456789
+2,Tran Thi B,tran@example.com,F,0912345679,987654321
+3,Le Van C,le@example.com,M,0912345680,456789123
+4,Pham Thi D,pham@example.com,F,0912345681,321654987
+5,Hoang Van E,hoang@example.com,M,0912345682,789123456

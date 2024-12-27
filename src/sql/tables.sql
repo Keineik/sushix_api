@@ -216,6 +216,9 @@ CREATE TABLE Reservation (
 	RsNotes NVARCHAR(2047),
 	BranchID INT NOT NULL,
 	CustID INT NOT NULL,
+	RsStatus CHAR(15) CHECK (RsStatus IN (
+		'Not Confirmed', 'Cancelled', 'Confirmed'
+	)),
 
 	CONSTRAINT FK_Reservation_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
 	CONSTRAINT FK_Reservation_Customter FOREIGN KEY (CustID) REFERENCES Customer(CustID)
@@ -283,7 +286,7 @@ CREATE TABLE DeliveryOrder (
 CREATE TABLE Coupon (
     CouponID INT IDENTITY(1,1) PRIMARY KEY,
     CouponCode VARCHAR(50) NOT NULL UNIQUE,
-    CouponDesc VARCHAR(255),
+    CouponDesc NVARCHAR(255),
 	DiscountFlat DECIMAL(19,4),
     DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
     MinPurchase DECIMAL(19,4) NOT NULL,
@@ -422,3 +425,137 @@ WITH (
 );
 
 -- ******************************************************
+
+PRINT 'Loading Customer';
+BULK INSERT Customer FROM '$(DataPath)Customer.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- *****************************************************
+
+PRINT 'Loading Staff';
+BULK INSERT Staff FROM '$(DataPath)Staff.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+---- ******************************************************
+
+PRINT 'Loading Reservation';
+BULK INSERT Reservation FROM '$(DataPath)Reservation.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- ******************************************************
+
+PRINT 'Loading Coupon';
+BULK INSERT Coupon FROM '$(DataPath)Coupon.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- ******************************************************
+
+PRINT 'Loading MembershipCard';
+BULK INSERT MembershipCard FROM '$(DataPath)MembershipCard.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- ******************************************************
+
+PRINT 'Loading Order';
+BULK INSERT [Order] FROM '$(DataPath)Order.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- ******************************************************
+
+PRINT 'Loading OrderDetails';
+BULK INSERT OrderDetails FROM '$(DataPath)OrderDetails.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- ******************************************************
+
+PRINT 'Loading Table';
+BULK INSERT [Table] FROM '$(DataPath)Table.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+
+-- ******************************************************
+
+PRINT 'Loading DineInOrder';
+BULK INSERT DineInOrder FROM '$(DataPath)DineInOrder.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
+

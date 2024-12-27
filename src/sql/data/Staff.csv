@@ -1,0 +1,9 @@
+StaffID,DeptName,BranchID,isBranchManager
+1,Kitchen,1,0
+2,Waiter,1,0
+3,Reception,1,0
+4,Cashier,1,0
+5,Manager,1,0
+6,Waiter,1,0
+7,Kitchen,1,0
+8,Reception,1,0

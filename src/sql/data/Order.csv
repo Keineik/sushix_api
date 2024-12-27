@@ -1,0 +1,3 @@
+OrderID,OrderDateTime,OrderStatus,StaffID,CustID,BranchID,OrderType
+1,2024-12-25 10:00:00,VERIFIED,1,1,1,I
+2,2024-12-26 11:00:00,DELIVERED,2,3,2,I

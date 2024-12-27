@@ -490,6 +490,14 @@ BEGIN CATCH
 END CATCH
 GO
 
+EXEC usp_InsertDeliveryOrder 
+    @CustID = 1,
+    @BranchID = 1,
+    @DeliveryAddress = '123 Main Street',
+    @DeliveryDateTime = '2024-12-27 10:00:00'; 
+
+select * from [Order]
+
 -- 11. Add Dine-In Order
 GO
 CREATE OR ALTER PROCEDURE usp_InsertDineInOrder
@@ -621,6 +629,11 @@ BEGIN TRY
 			@Total DECIMAL(19,4),
 			@CardType INT,
 			@CustID INT;
+	 -- Check if the order exists
+	 IF NOT EXISTS (
+		SELECT 1 FROM [Order] WHERE OrderID = @OrderID
+	 )
+		THROW 51000, 'Order does not exist.', 1;
 
 	 SELECT @CustID = CustID FROM [Order] WHERE OrderID = @OrderID;
             
@@ -741,6 +754,60 @@ BEGIN CATCH
 	;THROW
 END CATCH
 GO
+
+--EXEC usp_CreateInvoice 
+--    @OrderID = 1, 
+--    @PaymentMethod = N'Credit Card', 
+--    @CouponID = 2;
+
+--select * from Customer
+--select * from [Order]
+--select * from OrderDetails
+--select * from MembershipCard
+--select * from Coupon
+--select * from CardType
+--select * from [Table]
+--select * from DineInOrder
+
+
+--select * from Invoice
+
+go
+-- 13. Add new staff
+CREATE OR ALTER PROC InsertStaff
+    @DeptName VARCHAR(10),
+    @BranchID INT,
+    @IsBranchManager BIT = 0,    
+    @StaffName NVARCHAR(100),
+    @StaffDOB DATE,
+    @StaffGender CHAR(1)            
+AS
+SET XACT_ABORT, NOCOUNT ON
+BEGIN TRY
+    BEGIN TRANSACTION;
+
+	-- Retrieve the new StaffID
+    DECLARE @NewStaffID INT = SCOPE_IDENTITY();
+
+    -- Insert into Staff table
+    INSERT INTO Staff (StaffID, DeptName, BranchID, IsBranchManager)
+    VALUES (@NewStaffID, @DeptName, @BranchID, @IsBranchManager);
+
+    -- Insert into StaffInfo table
+    INSERT INTO StaffInfo (StaffID, StaffName, StaffDOB, StaffGender)
+    VALUES (@NewStaffID, @StaffName, @StaffDOB, @StaffGender);
+
+	-- Return the generated ID
+    SELECT SCOPE_IDENTITY();
+
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+GO
+
 
 -- 14. Transfer staff
 -- Update BranchID, Department.

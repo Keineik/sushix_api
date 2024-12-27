@@ -1,0 +1,5 @@
+DetailsID,OrderID,ItemID,UnitPrice,Quantity
+1,1,1,95000,3
+2,1,5,119000,4
+3,2,2,69000,1
+4,2,13,295000,1

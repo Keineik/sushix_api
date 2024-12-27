@@ -1,0 +1,4 @@
+CardID,IssuedDate,CardType,CustID,StaffID,Points
+1,2024-01-01,1,4,5,1
+2,2024-02-15,2,1,2,5000
+3,2024-03-10,3,3,3,10000
