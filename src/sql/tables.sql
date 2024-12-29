@@ -145,18 +145,22 @@ CREATE TABLE StaffInfo (
 	StaffName NVARCHAR(100) NOT NULL,
 	StaffDOB DATE,
 	StaffGender CHAR(1) CHECK (StaffGender IN ('M', 'F')),
+	StaffPhoneNumber VARCHAR(20) NOT NULL UNIQUE,
+	StaffCitizenID VARCHAR(20) NOT NULL UNIQUE,
 
-	CONSTRAINT FK_StaffInfo_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
+	CONSTRAINT FK_StaffInfo_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE CASCADE
 )
 
 CREATE TABLE WorkHistory (
 	StaffID INT,
 	StartDate DATE,
-	DeptID INT NOT NULL,
+	BranchID INT NOT NULL,
+	DeptName VARCHAR(10),
 	QuitDate DATE,
 
 	CONSTRAINT PK_WorkHistory PRIMARY KEY (StaffID, StartDate),
-	CONSTRAINT FK_WorkHistory_Department FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+	CONSTRAINT FK_WorkHistory_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID),
+	CONSTRAINT FK_WorkHistory_Department FOREIGN KEY (BranchID, DeptName) REFERENCES Department(BranchID, DeptName)
 );
 
 CREATE TABLE Customer (

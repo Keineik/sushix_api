@@ -1,25 +1,22 @@
 package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.DeliveryOrderCreationRequest;
-import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.request.ReservationRequest;
 import com.group09.sushix_api.dto.response.DeliveryOrderResponse;
-import com.group09.sushix_api.dto.response.DineInOrderResponse;
-import com.group09.sushix_api.dto.response.OrderResponse;
 import com.group09.sushix_api.dto.response.ReservationResponse;
 import com.group09.sushix_api.entity.Account;
 import com.group09.sushix_api.entity.Customer;
 import com.group09.sushix_api.entity.Order;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
-import com.group09.sushix_api.mapper.CustomerMapper;
 import com.group09.sushix_api.mapper.OrderMapper;
 import com.group09.sushix_api.mapper.ReservationMapper;
-import com.group09.sushix_api.repository.*;
-import jakarta.validation.constraints.Null;
+import com.group09.sushix_api.repository.AccountRepository;
+import com.group09.sushix_api.repository.CustomerRepository;
+import com.group09.sushix_api.repository.OrderRepository;
+import com.group09.sushix_api.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,8 +85,7 @@ public class OnlineCustomerService {
                     .findById(accountId)
                     .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
             customer = account.getCustomer();
-        }
-        else {
+        } else {
             customer = new Customer();
             customer.setCustEmail(request.getCustEmail());
             customer.setCustName(request.getCustName());
@@ -115,6 +111,7 @@ public class OnlineCustomerService {
         Order order = orderRepository
                 .findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+
         return DeliveryOrderResponse.builder()
                 .order(orderMapper.toOrderResponse(order))
                 .deliveryAddress(request.getDeliveryAddress())

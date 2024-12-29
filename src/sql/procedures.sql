@@ -490,9 +490,6 @@ EXEC usp_InsertDeliveryOrder
     @DeliveryDateTime = '2025-01-03 10:00:00',
 	@OrderID = @OrderID OUTPUT; 
 
-SELECT * FROM DeliveryOrder
-SELECT * FROM [Order]
-
 -- 11. Add Dine-In Order
 GO
 CREATE OR ALTER PROCEDURE usp_InsertDineInOrder
@@ -516,7 +513,7 @@ BEGIN TRY
 			WHERE BranchID = @BranchID 
 				AND TableCode = @TableCode
 				AND isVacant = 0
-		) THROW 51000, 'The table is being occupied at the moment', 1;
+		) THROW 51000, 'The table does not exists or it is being occupied at the moment', 1;
 
 		INSERT INTO [Order] (OrderStatus, StaffID, CustID, BranchID, OrderType)
 		VALUES ('VERIFIED', @StaffID, @CustID, @BranchID, 'I');
@@ -847,22 +844,24 @@ BEGIN TRY
 	-- If there is no change in branch or department
 	IF @CurrentBranchID = @NewBranchID AND @CurrentDeptName = @NewDeptName
 	BEGIN
-		;THROW 51000, 'BranchID and Department are unchanged.', 1;
+		RETURN;
 	END
-
+	
 	-- Update the QuitDate of the current work history
     UPDATE WorkHistory
     SET QuitDate = @StartDate
     WHERE StaffID = @StaffID 
-		AND DeptID = (SELECT DeptID FROM Department WHERE BranchID = @CurrentBranchID AND DeptName = @CurrentDeptName)
+		AND BranchID = @CurrentBranchID 
+		AND DeptName = @CurrentDeptName
         AND QuitDate IS NULL;
 
 	-- Add a new record to the WorkHistory table for the new department
-	INSERT INTO WorkHistory (StaffID, StartDate, DeptID)
+	INSERT INTO WorkHistory (StaffID, StartDate, BranchID, DeptName)
 	VALUES (
 		@StaffID,
 		@StartDate,
-		(SELECT DeptID FROM Department WHERE BranchID = @NewBranchID AND DeptName = @NewDeptName)
+		@NewBranchID,
+		@NewDeptName
 	);
 
 	-- Update the BranchID and DeptName in the Staff table

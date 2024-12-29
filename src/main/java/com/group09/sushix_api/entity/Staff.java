@@ -29,6 +29,6 @@ public class Staff {
     })
     Department department;
 
-    @Column(name = "isBranchManager", nullable = false)
+    @Column(name = "isBranchManager")
     Boolean isBranchManager = false;
 }

@@ -4,16 +4,17 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Set;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class DineInOrderCreationRequest {
-    Integer custId;
-    Integer tableCode;
-    Integer rsId;
-    Set<OrderDetailsRequest> orderDetails;
+public class StaffRequest {
+    String deptName;
+    Integer branchId;
+    String staffName;
+    String staffDOB;
+    String staffGender;
+    String staffPhoneNumber;
+    String staffCitizenId;
 }

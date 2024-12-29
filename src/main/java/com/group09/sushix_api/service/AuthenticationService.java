@@ -35,6 +35,7 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -155,6 +156,6 @@ public class AuthenticationService {
         return ((account.getIsAdmin()) ? "ADMIN" : "")
                 + ((account.getCustomer() != null) ? "CUSTOMER" : "")
                 + ((account.getStaff() != null) ? "STAFF" : "")
-                + ((account.getStaff() != null && account.getStaff().getIsBranchManager()) ? "MANAGER" : "");
+                + ((account.getStaff() != null && Objects.equals(account.getStaff().getDepartment().getDeptName(), "Manager")) ? "MANAGER" : "");
     }
 }

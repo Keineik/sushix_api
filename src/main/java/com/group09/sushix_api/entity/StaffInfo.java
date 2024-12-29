@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "StaffInfo")
@@ -28,13 +29,15 @@ public class StaffInfo {
     String staffName;
 
     @Column(name = "StaffDOB")
-    Instant staffDOB;
+    LocalDate staffDOB;
 
     @Size(max = 1)
     @Column(name = "StaffGender", nullable = false)
     String staffGender;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "StaffID", referencedColumnName = "StaffID", insertable = false, updatable = false)
-    Staff staff;
+    @Column(name = "StaffPhoneNumber", nullable = false)
+    String staffPhoneNumber;
+
+    @Column(name = "StaffCitizenID", nullable = false)
+    String staffCitizenId;
 }
