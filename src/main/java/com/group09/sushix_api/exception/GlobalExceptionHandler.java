@@ -4,6 +4,7 @@ import com.group09.sushix_api.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -66,6 +67,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = DataIntegrityViolationException.class)
     ResponseEntity<ApiResponse> handlingDataIntegrityViolationException(DataIntegrityViolationException exception) {
+        ErrorCode errorCode = ErrorCode.DATABASE_LEVEL_ERROR;
+
+        String rootCauseMessage = exception.getRootCause() != null
+                ? exception.getRootCause().getMessage()
+                : exception.getMessage();
+
+        return ResponseEntity.status(errorCode.getStatusCode())
+                .body(ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(rootCauseMessage)
+                        .build());
+    }
+
+    @ExceptionHandler(value = InvalidDataAccessResourceUsageException.class)
+    ResponseEntity<ApiResponse> InvalidDataAccessResourceUsageException(InvalidDataAccessResourceUsageException exception) {
         ErrorCode errorCode = ErrorCode.DATABASE_LEVEL_ERROR;
 
         String rootCauseMessage = exception.getRootCause() != null
