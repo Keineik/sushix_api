@@ -28,6 +28,13 @@ public class CustomerController {
                 .build();
     }
 
+    @GetMapping("/current")
+    ApiResponse<CustomerResponse> getCurrentCustomer() {
+        return ApiResponse.<CustomerResponse>builder()
+                .result(customerService.getCurrentCustomer())
+                .build();
+    }
+
     @GetMapping("/{customerId}")
     ApiResponse<CustomerResponse> getCustomer(@PathVariable("customerId") Integer customerId) {
         return ApiResponse.<CustomerResponse>builder()

@@ -5,9 +5,10 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Entity
-@Table(name = "Order")
+@Table(name = "[Order]")
 @Getter
 @Setter
 @Builder
@@ -37,4 +38,7 @@ public class Order {
     @ManyToOne(optional = false)
     @JoinColumn(name = "BranchID", nullable = false)
     Branch branch;
+
+    @OneToMany(mappedBy = "order")
+    Set<OrderDetails> orderDetails;
 }

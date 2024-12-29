@@ -16,5 +16,5 @@ public class DineInOrderCreationRequest {
     Integer branchId;
     Integer tableCode;
     Integer rsId;
-    Set<OrderDetailsRequest> menuItems;
+    Set<OrderDetailsRequest> orderDetails;
 }

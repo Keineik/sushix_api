@@ -2,14 +2,17 @@ package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.CustomerRequest;
 import com.group09.sushix_api.dto.response.CustomerResponse;
+import com.group09.sushix_api.entity.Account;
 import com.group09.sushix_api.entity.Customer;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.CustomerMapper;
+import com.group09.sushix_api.repository.AccountRepository;
 import com.group09.sushix_api.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class CustomerService {
-
+    AccountRepository accountRepository;
     CustomerRepository customerRepository;
     CustomerMapper customerMapper;
 
@@ -29,6 +32,24 @@ public class CustomerService {
                 .stream()
                 .map(customerMapper::toCustomerResponse)
                 .toList();
+    }
+
+    public CustomerResponse getCurrentCustomer() {
+        Account account = null;
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            Integer accountId = Integer.valueOf(auth.getName());
+            account = accountRepository
+                    .findById(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        return customerMapper.toCustomerResponse(
+                customerRepository
+                        .findById(account.getCustomer().getCustId())
+                        .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
     }
 
     public CustomerResponse getCustomer(Integer customerId) {

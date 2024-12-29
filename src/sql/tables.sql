@@ -38,7 +38,10 @@ PRINT '*** Dropping Database';
 GO
 
 IF EXISTS (SELECT [name] FROM [master].[sys].[databases] WHERE [name] = N'$(DatabaseName)')
+BEGIN
+	ALTER DATABASE $(DatabaseName) SET SINGLE_USER WITH ROLLBACK IMMEDIATE
     DROP DATABASE $(DatabaseName);
+END
 
 -- If the database has any other open connections close the network connection.
 IF @@ERROR = 3702
@@ -162,7 +165,7 @@ CREATE TABLE Customer (
     CustEmail VARCHAR(255),
     CustGender CHAR(1) CHECK (CustGender IN ('M', 'F')),
     CustPhoneNumber VARCHAR(20),
-    CustCitizenID VARCHAR(20) UNIQUE
+    CustCitizenID VARCHAR(20)
 );
 
 CREATE TABLE CardType (
@@ -218,7 +221,7 @@ CREATE TABLE Reservation (
 	CustID INT NOT NULL,
 	RsStatus CHAR(15) CHECK (RsStatus IN (
 		'Not Confirmed', 'Cancelled', 'Confirmed'
-	)),
+	)) DEFAULT 'Not Confirmed',
 
 	CONSTRAINT FK_Reservation_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
 	CONSTRAINT FK_Reservation_Customter FOREIGN KEY (CustID) REFERENCES Customer(CustID)

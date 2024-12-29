@@ -465,14 +465,14 @@ BEGIN TRY
 	IF (@DeliveryDateTime <= GETDATE())
 		THROW 51000, 'Delivery date time must be after current date time', 1;
 
-    INSERT INTO [Order] (OrderStatus, CustID, BranchID)
-    VALUES ('UNVERIFIED', @CustID, @BranchID);
-    
-	INSERT INTO DeliveryOrder (OrderID, DeliveryAddress, DeliveryDateTime)
-	VALUES (SCOPE_IDENTITY(), @DeliveryAddress, @DeliveryDateTime);
+    INSERT INTO [Order] (OrderStatus, CustID, BranchID, OrderType)
+    VALUES ('UNVERIFIED', @CustID, @BranchID, 'D');
 
 	-- Return the generated ID
     SELECT @OrderID = SCOPE_IDENTITY();
+    
+	INSERT INTO DeliveryOrder (OrderID, DeliveryAddress, DeliveryDateTime)
+	VALUES (SCOPE_IDENTITY(), @DeliveryAddress, @DeliveryDateTime)
 
 	COMMIT TRANSACTION;
 END TRY
@@ -490,7 +490,8 @@ EXEC usp_InsertDeliveryOrder
     @DeliveryDateTime = '2025-01-03 10:00:00',
 	@OrderID = @OrderID OUTPUT; 
 
-select * from [Order]
+SELECT * FROM DeliveryOrder
+SELECT * FROM [Order]
 
 -- 11. Add Dine-In Order
 GO

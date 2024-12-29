@@ -14,8 +14,8 @@ import java.util.Set;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DineInOrderResponse {
-    Order order;
+    OrderResponse order;
     RestaurantTable table;
     Integer rsId;
-    Set<OrderDetailsRequest> menuItems;
+    Set<OrderDetailsRequest> orderDetails;
 }

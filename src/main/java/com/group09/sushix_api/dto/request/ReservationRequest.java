@@ -15,6 +15,12 @@ import java.util.Set;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReservationRequest {
+    String CustName;
+
+    String CustEmail;
+
+    String CustPhoneNumber;
+
     @Min(1)
     Integer numOfGuests;
 
@@ -28,5 +34,5 @@ public class ReservationRequest {
 
     Integer custId;
 
-    Set<OrderDetailsRequest> menuItems;
+    Set<OrderDetailsRequest> orderDetails;
 }

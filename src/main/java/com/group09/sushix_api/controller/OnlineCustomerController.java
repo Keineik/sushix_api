@@ -1,7 +1,11 @@
 package com.group09.sushix_api.controller;
 
+import com.group09.sushix_api.dto.request.DeliveryOrderCreationRequest;
+import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.request.ReservationRequest;
 import com.group09.sushix_api.dto.response.ApiResponse;
+import com.group09.sushix_api.dto.response.DeliveryOrderResponse;
+import com.group09.sushix_api.dto.response.DineInOrderResponse;
 import com.group09.sushix_api.dto.response.ReservationResponse;
 import com.group09.sushix_api.service.OnlineCustomerService;
 import lombok.AccessLevel;
@@ -22,6 +26,13 @@ public class OnlineCustomerController {
     ApiResponse<ReservationResponse> createReservation(@RequestBody ReservationRequest request) {
         return ApiResponse.<ReservationResponse>builder()
                 .result(onlineCustomerService.createReservation(request))
+                .build();
+    }
+
+    @PostMapping("/delivery-order")
+    ApiResponse<DeliveryOrderResponse> createDineInOrder(@RequestBody DeliveryOrderCreationRequest request) {
+        return ApiResponse.<DeliveryOrderResponse>builder()
+                .result(onlineCustomerService.createDeliveryOrder(request))
                 .build();
     }
 }

@@ -24,7 +24,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             @Param("CustID") Integer custId,
             @Param("BranchID") Integer branchId,
             @Param("DeliveryAddress") String deliveryAddress,
-            @Param("DeliveryDateTime") LocalDateTime deliveryDateTime
+            @Param("DeliveryDateTime") String deliveryDateTime
     );
 
     @Procedure(procedureName = "usp_InsertOrderDetails")
