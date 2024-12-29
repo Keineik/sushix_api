@@ -180,7 +180,8 @@ CREATE OR ALTER PROC usp_FetchOrders
 	@Limit INT = 18,
 	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
 	@BranchID INT = 0, -- Filter by Branch
-	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
+	@OrderID INT = 0, -- Filter by Order
+	@OrderStatus NVARCHAR(50) = '', -- Filter by 
 	@OrderType NVARCHAR(10) = '', -- Filter by OrderType ('Dine-In', 'Delivery')
 	@SortKey NVARCHAR(20) = 'OrderDateTime', -- Sort by OrderDateTime/EstimatedPrice
 	@SortDirection BIT = 0 -- 0: asc, 1: desc
@@ -213,6 +214,7 @@ BEGIN
 	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
+		AND (@OrderID = 0 or o.OrderID = @OrderID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR 
 			(@OrderType = 'Delivery' AND do.OrderID IS NOT NULL) OR 
