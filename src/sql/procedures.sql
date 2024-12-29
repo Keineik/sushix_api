@@ -424,7 +424,9 @@ CREATE OR ALTER PROCEDURE usp_InsertReservation
     @ArrivalDateTime DATETIME,
     @RsNotes NVARCHAR(2047),
     @BranchID INT,
-    @CustID INT
+    @CustID INT,
+
+	@rsId INT OUT
 AS
 SET XACT_ABORT, NOCOUNT ON
 BEGIN TRY
@@ -437,7 +439,7 @@ BEGIN TRY
     VALUES (@NumOfGuests, @ArrivalDateTime, @RsNotes, @BranchID, @CustID);
 
     -- Return the generated ID
-    SELECT SCOPE_IDENTITY();
+    SELECT @rsId = SCOPE_IDENTITY();
 	COMMIT TRANSACTION
 END TRY
 BEGIN CATCH
@@ -452,7 +454,9 @@ CREATE OR ALTER PROCEDURE usp_InsertDeliveryOrder
     @CustID INT = NULL,
     @BranchID INT,
 	@DeliveryAddress NVARCHAR(2047),
-	@DeliveryDateTime DATETIME
+	@DeliveryDateTime DATETIME,
+
+	@OrderID INT OUT
 AS
 SET XACT_ABORT, NOCOUNT ON
 BEGIN TRY
@@ -468,7 +472,7 @@ BEGIN TRY
 	VALUES (SCOPE_IDENTITY(), @DeliveryAddress, @DeliveryDateTime);
 
 	-- Return the generated ID
-    SELECT SCOPE_IDENTITY();
+    SELECT @OrderID = SCOPE_IDENTITY();
 
 	COMMIT TRANSACTION;
 END TRY
@@ -478,11 +482,13 @@ BEGIN CATCH
 END CATCH
 GO
 
+DECLARE @OrderID INT;
 EXEC usp_InsertDeliveryOrder 
     @CustID = 1,
     @BranchID = 1,
     @DeliveryAddress = '123 Main Street',
-    @DeliveryDateTime = '2024-12-27 10:00:00'; 
+    @DeliveryDateTime = '2025-01-03 10:00:00',
+	@OrderID = @OrderID OUTPUT; 
 
 select * from [Order]
 
@@ -493,7 +499,9 @@ CREATE OR ALTER PROCEDURE usp_InsertDineInOrder
     @BranchID INT,
 	@StaffID INT = NULL, -- Determine an order is created by a staff or by a customer through reservation
 	@TableCode INT,
-	@RsID INT = NULL
+	@RsID INT = NULL,
+
+	@OrderID INT OUT
 AS
 SET XACT_ABORT, NOCOUNT ON
 BEGIN TRY
@@ -512,6 +520,9 @@ BEGIN TRY
 		INSERT INTO [Order] (OrderStatus, StaffID, CustID, BranchID, OrderType)
 		VALUES ('VERIFIED', @StaffID, @CustID, @BranchID, 'I');
 
+		-- Return the generated ID
+		SELECT @OrderID = SCOPE_IDENTITY();
+
 		INSERT INTO DineInOrder (OrderID, TableCode, BranchID, RsID)
 		VALUES (SCOPE_IDENTITY(), @TableCode, @BranchID, @RsID);
 
@@ -527,6 +538,9 @@ BEGIN TRY
 
 		INSERT INTO [Order] (OrderStatus, CustID, BranchID, OrderType)
 		VALUES ('UNVERIFIED', @CustID, @BranchID, 'D');
+
+		-- Return the generated ID
+		SELECT @OrderID = SCOPE_IDENTITY();
 
 		INSERT INTO DineInOrder (OrderID, BranchID, RsID)
 		VALUES (SCOPE_IDENTITY(), @BranchID, @RsID);
@@ -564,13 +578,13 @@ BEGIN TRY
 		THROW 51000, 'Order must not be cancelled or completed', 1;
 
 	-- Check if that branch serve that item
-	DECLARE @IsShippable BIT = (
+	DECLARE @IsShippable BIT = IIF (EXISTS(
 		SELECT bmi.IsShippable
 		FROM BranchMenuItem bmi
 		WHERE 
 			bmi.ItemID = @ItemID
 			AND bmi.BranchID = @BranchID
-	);
+	), 1, 0);
 
 	IF (@IsShippable IS NULL)
 		THROW 51000, 'This item is not for sale at this branch', 1;

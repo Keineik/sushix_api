@@ -22,16 +22,6 @@ public class Staff {
     @Column(name = "StaffID")
     Integer staffId;
 
-    @Size(max = 100)
-    @Column(name = "StaffName", nullable = false)
-    String staffName;
-
-    @Column(name = "StaffDOB")
-    LocalDate staffDOB;
-
-    @Column(name = "StaffGender", length = 1)
-    String staffGender;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
             @JoinColumn(name = "BranchID", referencedColumnName = "BranchID"),

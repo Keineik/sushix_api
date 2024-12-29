@@ -126,14 +126,14 @@ public class AuthenticationService {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(account.getUsername())
+                .subject(String.valueOf(account.getAccountId()))
                 .issuer("sushix.group09")
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli()))
+                .claim("scope", buildScope(account))
                 .claim("accountId", account.getAccountId())
                 .claim("username", account.getUsername())
                 .claim("isAdmin", account.getIsAdmin())
-                .claim("scope", buildScope(account))
                 .claim("customer", account.getCustomer())
                 .claim("staff", account.getStaff())
                 .build();

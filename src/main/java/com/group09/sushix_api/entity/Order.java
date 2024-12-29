@@ -20,7 +20,7 @@ public class Order {
     @Column(name = "OrderID")
     Integer orderId;
 
-    @Column(name = "OrderDateTime", columnDefinition = "DATETIME DEFAULT GETDATE()")
+    @Column(name = "OrderDateTime")
     Instant orderDateTime;
 
     @Column(name = "OrderStatus", length = 50)
