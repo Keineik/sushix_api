@@ -614,7 +614,7 @@ CREATE OR ALTER PROCEDURE usp_CreateInvoice (
     @OrderID INT,
 	@PaymentMethod NVARCHAR(50),
 	@TaxRate DECIMAL(4,3) = 0.1,
-	@CouponID INT
+	@CouponCode VARCHAR(50)
 )
 AS
 SET XACT_ABORT, NOCOUNT ON
@@ -628,7 +628,9 @@ BEGIN TRY
 			@Subtotal DECIMAL(19,4),
 			@Total DECIMAL(19,4),
 			@CardType INT,
-			@CustID INT;
+			@CustID INT,
+			@CouponID INT;
+	SELECT @CouponID = CouponID FROM Coupon WHERE CouponCode = @CouponCode
 	 -- Check if the order exists
 	 IF NOT EXISTS (
 		SELECT 1 FROM [Order] WHERE OrderID = @OrderID
