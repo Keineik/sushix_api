@@ -88,7 +88,7 @@ CREATE TABLE MenuItem (
     IsDiscontinued BIT,
 	ImgUrl NVARCHAR(2083),
 
-    CONSTRAINT FK_MenuItem_MenuCategory FOREIGN KEY (CategoryID) REFERENCES MenuCategory(CategoryID)
+    CONSTRAINT FK_MenuItem_MenuCategory FOREIGN KEY (CategoryID) REFERENCES MenuCategory(CategoryID) ON DELETE SET NULL
 );
 
 CREATE TABLE MenuCombo (
@@ -118,6 +118,7 @@ CREATE TABLE Department (
     DeptName VARCHAR(10) CHECK (DeptName IN ('Kitchen', 'Reception', 'Waiter', 'Cashier', 'Manager')),
     Salary DECIMAL(19,4),
 
+	CONSTRAINT FK_Department_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID) ON DELETE CASCADE,
 	CONSTRAINT UQ_BranchID_DeptName UNIQUE (BranchID, DeptName)
 );
 
@@ -256,7 +257,7 @@ CREATE TABLE OrderDetails (
 	Quantity INT CHECK (Quantity > 0),
 
 	CONSTRAINT UQ_OrderID_ItemID UNIQUE (OrderID, ItemID),
-	CONSTRAINT FK_OrderDetails_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
+	CONSTRAINT FK_OrderDetails_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID) ON DELETE CASCADE,
 	CONSTRAINT FK_OrderDetails_Item FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID),
 );
 
@@ -277,7 +278,7 @@ CREATE TABLE DineInOrder (
 	BranchID INT NOT NULL,
 	RsID INT,
 
-	CONSTRAINT FK_DineInOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
+	CONSTRAINT FK_DineInOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID) ON DELETE CASCADE,
 	CONSTRAINT FK_DineInOrder_Table FOREIGN KEY (BranchID, TableCode) REFERENCES [Table](BranchID, TableCode),
 	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES Reservation(RsID)
 );

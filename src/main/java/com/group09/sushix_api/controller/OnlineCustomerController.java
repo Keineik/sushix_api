@@ -31,7 +31,7 @@ public class OnlineCustomerController {
     }
 
     @PostMapping("/delivery-order")
-    ApiResponse<DeliveryOrderResponse> createDineInOrder(@RequestBody DeliveryOrderCreationRequest request) {
+    ApiResponse<DeliveryOrderResponse> createDeliveryOrder(@RequestBody DeliveryOrderCreationRequest request) {
         return ApiResponse.<DeliveryOrderResponse>builder()
                 .result(onlineCustomerService.createDeliveryOrder(request))
                 .build();

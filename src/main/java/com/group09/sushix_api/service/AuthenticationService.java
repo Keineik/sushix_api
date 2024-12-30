@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 @Service
 @RequiredArgsConstructor
@@ -149,9 +150,13 @@ public class AuthenticationService {
     }
 
     private String buildScope(Account account) {
-        return ((account.getIsAdmin()) ? "ADMIN" : "")
-                + ((account.getCustomer() != null) ? "CUSTOMER" : "")
-                + ((account.getStaff() != null) ? "STAFF" : "")
-                + ((account.getStaff() != null && Objects.equals(account.getStaff().getDepartment().getDeptName(), "Manager")) ? "MANAGER" : "");
+        StringJoiner stringJoiner = new StringJoiner(" ");
+        if (account.getIsAdmin()) stringJoiner.add("ADMIN");
+        if (account.getCustomer() != null) stringJoiner.add("CUSTOMER");
+        if (account.getStaff() != null) stringJoiner.add("STAFF");
+        if (account.getStaff() != null && Objects.equals(account.getStaff().getDepartment().getDeptName(), "Manager"))
+            stringJoiner.add("MANAGER");
+
+        return stringJoiner.toString();
     }
 }

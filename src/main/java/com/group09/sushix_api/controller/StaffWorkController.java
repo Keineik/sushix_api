@@ -8,10 +8,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/staff")
@@ -21,10 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class StaffWorkController {
     StaffWorkService staffWorkService;
 
-    @PostMapping("dine-in-order")
+    @PostMapping("/dine-in-order")
     ApiResponse<DineInOrderResponse> createDineInOrder(@RequestBody DineInOrderCreationRequest request) {
         return ApiResponse.<DineInOrderResponse>builder()
                 .result(staffWorkService.createDineInOrder(request))
+                .build();
+    }
+
+    @PutMapping("/dine-in-order/{orderId}")
+    ApiResponse<DineInOrderResponse> updateDineInOrder(@PathVariable("orderId") Integer orderId,
+                                                       @RequestBody DineInOrderCreationRequest request) {
+        return ApiResponse.<DineInOrderResponse>builder()
+                .result(staffWorkService.updateDineInOrder(orderId, request))
                 .build();
     }
 }

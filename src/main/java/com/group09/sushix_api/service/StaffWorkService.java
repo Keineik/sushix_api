@@ -2,13 +2,14 @@ package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.response.DineInOrderResponse;
-import com.group09.sushix_api.entity.Account;
-import com.group09.sushix_api.entity.Order;
+import com.group09.sushix_api.entity.*;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.OrderMapper;
 import com.group09.sushix_api.repository.AccountRepository;
+import com.group09.sushix_api.repository.DineInOrderRepository;
 import com.group09.sushix_api.repository.OrderRepository;
+import com.group09.sushix_api.repository.RestaurantTableRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,21 +26,12 @@ public class StaffWorkService {
     AccountRepository accountRepository;
 
     OrderMapper orderMapper;
+    private final DineInOrderRepository dineInOrderRepository;
+    private final RestaurantTableRepository restaurantTableRepository;
 
     @Transactional(rollbackFor = Exception.class)
     public DineInOrderResponse createDineInOrder(DineInOrderCreationRequest request) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (Objects.equals(auth.getName(), "anonymousUser"))
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-
-        Integer accountId = Integer.valueOf(auth.getName());
-        Account account = accountRepository
-                .findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
-
-        var staff = account.getStaff();
-        if (staff == null)
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+        Staff staff = getStaffFromAuth();
 
         Integer orderId = orderRepository.insertDineInOrder(
                 request.getCustId(),
@@ -68,5 +60,29 @@ public class StaffWorkService {
                 .rsId(request.getRsId())
                 .orderDetails(request.getOrderDetails())
                 .build();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public DineInOrderResponse updateDineInOrder(Integer orderId,
+                                                 DineInOrderCreationRequest request) {
+        orderRepository.deleteById(orderId);
+        return createDineInOrder(request);
+    }
+
+    private Staff getStaffFromAuth() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.equals(auth.getName(), "anonymousUser"))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        Integer accountId = Integer.valueOf(auth.getName());
+        Account account = accountRepository
+                .findById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+
+        var staff = account.getStaff();
+        if (staff == null)
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+
+        return staff;
     }
 }

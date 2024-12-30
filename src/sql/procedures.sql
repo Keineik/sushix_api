@@ -507,12 +507,12 @@ BEGIN TRY
 	
 	IF (@StaffID IS NOT NULL) -- If created by a staff
 	BEGIN
-		IF EXISTS (
+		IF NOT EXISTS (
 			SELECT 1 
 			FROM [Table] 
 			WHERE BranchID = @BranchID 
 				AND TableCode = @TableCode
-				AND isVacant = 0
+				AND isVacant = 1
 		) THROW 51000, 'The table does not exists or it is being occupied at the moment', 1;
 
 		INSERT INTO [Order] (OrderStatus, StaffID, CustID, BranchID, OrderType)
@@ -601,6 +601,21 @@ BEGIN CATCH
 END CATCH
 GO
 
+-- 1011.2 Update table state when delete dine in order
+GO
+CREATE OR ALTER TRIGGER trg_UpdateTableVacancy ON DineInOrder
+AFTER DELETE
+AS
+BEGIN
+	-- If now rows affected
+	IF (ROWCOUNT_BIG() = 0) RETURN;
+
+	UPDATE [Table] SET isVacant = 1
+	FROM [Table] t, deleted d
+	WHERE t.BranchID = d.BranchID
+		AND t.TableCode = d.TableCode
+END
+GO
 
 -- 12. Create Invoice from order  
 -- Issue an Invoice
@@ -848,7 +863,7 @@ BEGIN TRY
 	BEGIN
 		RETURN;
 	END
-	
+
 	-- Update the QuitDate of the current work history
     UPDATE WorkHistory
     SET QuitDate = @StartDate
