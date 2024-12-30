@@ -14,6 +14,7 @@ import com.group09.sushix_api.repository.StaffInfoRepository;
 import com.group09.sushix_api.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,9 +29,8 @@ public class StaffService {
     StaffRepository staffRepository;
     StaffInfoRepository staffInfoRepository;
     AccountRepository accountRepository;
-
     StaffMapper staffMapper;
-    AccountMapper accountMapper;
+    PasswordEncoder passwordEncoder;
 
     @Transactional(rollbackFor = Exception.class)
     public StaffResponse getStaff(Integer staffId) {
@@ -68,7 +68,7 @@ public class StaffService {
 
         Account account = Account.builder()
                 .username(request.getStaffPhoneNumber())
-                .password(request.getStaffCitizenId())
+                .password(passwordEncoder.encode(request.getStaffCitizenId()))
                 .customer(null).staff(staff).isAdmin(false)
                 .build();
         accountRepository.save(account);

@@ -126,17 +126,13 @@ public class AuthenticationService {
     private String generateToken(Account account) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
+        String pattern = "MM/dd/yyyy HH:mm:ss";
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(account.getAccountId()))
                 .issuer("sushix.group09")
-                .issueTime(new Date())
+                .issueTime(new Date(Instant.now().toEpochMilli()))
                 .expirationTime(new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli()))
                 .claim("scope", buildScope(account))
-                .claim("accountId", account.getAccountId())
-                .claim("username", account.getUsername())
-                .claim("isAdmin", account.getIsAdmin())
-                .claim("customer", account.getCustomer())
-                .claim("staff", account.getStaff())
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
