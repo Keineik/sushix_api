@@ -33,7 +33,7 @@ begin
 	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID)
 	where (mi.ItemName like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
-		and (@BranchID = 0 or bmi.BranchID = @CategoryID)
+		and (@BranchID = 0 or bmi.BranchID = @BranchID)
 		and (@FilterShippable = 0 or bmi.IsShippable = 1)
 	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.SoldQuantity, mi.IsDiscontinued, mi.ImgUrl
 	order by 
