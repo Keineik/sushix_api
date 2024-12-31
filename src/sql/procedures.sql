@@ -45,7 +45,7 @@ begin
 end;
 
 GO
-create or alter proc usp_CountItems
+create or alter proc usp_FetchItems_count
     @SearchTerm nvarchar(100) = '', -- ItemID or ItemName
     @CategoryID int = 0, -- Filter
     @BranchID int = 0, -- Filter
@@ -111,6 +111,25 @@ EXEC usp_FetchStaffs
 
 GO
 
+CREATE OR ALTER PROC usp_FetchStaffs_count 
+	@SearchTerm nvarchar(100) = '', -- StaffID/StaffName
+    @BranchID int = 0, --Filter
+    @Department varchar(10) = '',
+	@Count int out
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
+	SELECt  @count = count(distinct(s.StaffID))
+	FROM Staff s left join StaffInfo si ON s.StaffID = si.StaffID
+    WHERE s.StaffID like @Search or si.StaffName like @Search
+        AND (@BranchID = 0 OR s.BranchID = @BranchID)
+        AND (@Department = '' OR s.DeptName = @Department)
+END
+
+
+GO
+
 -- 3. Fetch Reservation
 -- Fetch reservations with pagination. 
 -- JOIN with Customer table to get CustName, CustPhoneNumber, CustEmail. 
@@ -151,17 +170,20 @@ BEGIN
     CASE WHEN @SortDirection = 1 THEN r.RsDateTime END DESC
 	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
+
 GO
 
-CREATE OR ALTER PROC usp_CountReservation
+
+CREATE OR ALTER PROC usp_FetchReservations_count
 	@SearchTerm NVARCHAR(100) = '', -- ReservationID
-	@BranchID INT = 0 -- Filter
+	@BranchID INT = 0, -- Filter
+	@Count INT OUT
 AS
 BEGIN
 	SET NOCOUNT ON;
 	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
-	SELECT COUNT(DISTINCT(r.RsID))
+	SELECT @Count= COUNT(DISTINCT(r.RsID))
 	FROM Reservation r
 	JOIN Customer c ON r.CustID = c.CustID
 	WHERE (r.RsID LIKE @Search)
@@ -245,17 +267,18 @@ END
 GO
 exec usp_FetchOrders
 GO
-CREATE OR ALTER PROC usp_CountOrders
+CREATE OR ALTER PROC usp_FetchOrders_count
 	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
 	@BranchID INT = 0, -- Filter by Branch
 	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
-	@OrderType CHAR(1) = '' -- Filter by OrderType ('D' for DeliveryOrder, 'I' for DineInOrder)
+	@OrderType CHAR(1) = '', -- Filter by OrderType ('D' for DeliveryOrder, 'I' for DineInOrder)
+	@Count INT OUT
 AS
 BEGIN
 	SET NOCOUNT ON;
 	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
-	SELECT COUNT(DISTINCT o.OrderID)
+	SELECT @Count = COUNT(DISTINCT o.OrderID)
 	FROM [Order] o
 	JOIN Customer c ON o.CustID = c.CustID
 	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
@@ -335,6 +358,32 @@ BEGIN
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
 
+GO 
+
+CREATE OR ALTER PROC usp_FetchInvoices_count
+	@SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
+    @BranchID INT = 0, -- Filter by BranchID
+    @StartDate DATE = NULL, -- Filter by Start Date
+    @EndDate DATE = NULL, -- Filter by End Date
+	@Count INT OUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+
+    SELECT @Count = COUNT(DISTINCT i.InvoiceID)
+    FROM Invoice i
+    JOIN [Order] o ON i.OrderID = o.OrderID
+    JOIN Customer c ON o.CustID = c.CustID
+    LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
+    WHERE 
+        (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search 
+         OR c.CustName LIKE @Search 
+         OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+        AND (@BranchID = 0 OR o.BranchID = @BranchID)
+        AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
+        AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
+END;
 
 GO
 -- 
@@ -362,7 +411,22 @@ BEGIN
     FROM Customer
     WHERE (CAST(CustID AS NVARCHAR) LIKE @Search OR CustName LIKE @Search)
     ORDER BY CustID
-    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+END;
+GO
+
+CREATE OR ALTER PROC usp_FetchCustomers_count
+    @SearchTerm NVARCHAR(100) = '',
+	@Count INT OUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+
+    SELECT 
+        @Count = COUNT(DISTINCT CustID)
+    FROM Customer
+    WHERE (CAST(CustID AS NVARCHAR) LIKE @Search OR CustName LIKE @Search)
 END;
 GO
 
@@ -419,6 +483,31 @@ BEGIN
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
 GO
+
+CREATE OR ALTER PROC usp_FetchCoupons_count
+    @SearchTerm NVARCHAR(100) = '', -- Search by CouponID or CouponCode
+    @MinPurchase DECIMAL(19,4) = 0, -- Filter by MinPurchase
+    @MinMembershipRequirement INT = NULL, -- Filter by MembershipRequirement
+    @Status NVARCHAR(10) = '', -- Filter by Status ('available' or 'unavailable')
+    @Count INT OUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+
+    SELECT 
+        @Count = COUNT(distinct CouponID)
+    FROM Coupon
+    WHERE (CAST(CouponID AS NVARCHAR) LIKE @Search OR CouponCode LIKE @Search)
+        AND (MinPurchase >= @MinPurchase)
+        AND (@MinMembershipRequirement IS NULL OR MinMembershipRequirement = @MinMembershipRequirement)
+        AND (@Status = '' OR 
+             (@Status = 'available' AND GETDATE() BETWEEN EffectiveDate AND ExpiryDate) OR
+             (@Status = 'unavailable' AND GETDATE() NOT BETWEEN EffectiveDate AND ExpiryDate));
+END;
+GO
+
 
 -- 8. Fetch statistics for a branch
 -- - (e.g., number of orders, revenue, online accesss) I have no idea 
