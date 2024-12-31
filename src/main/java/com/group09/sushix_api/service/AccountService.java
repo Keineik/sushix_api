@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,5 +42,20 @@ public class AccountService {
                 accountRepository
                         .findById(accountId)
                         .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
+    }
+
+    public AccountResponse getCurrentAccount() {
+        Account account = null;
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            Integer accountId = Integer.valueOf(auth.getName());
+            account = accountRepository
+                    .findById(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        return accountMapper.toAccountResponse(account);
     }
 }

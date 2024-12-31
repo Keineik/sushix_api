@@ -41,12 +41,12 @@ public class AccountController {
                 .build();
     }
 
-//    @GetMapping("/my-info")
-//    ApiResponse<AccountResponse> getMyInfo() {
-//        return ApiResponse.<AccountResponse>builder()
-//                .result(accountService.getMyInfo())
-//                .build();
-//    }
+    @GetMapping("/current")
+    ApiResponse<AccountResponse> getCurrentAccount() {
+        return ApiResponse.<AccountResponse>builder()
+                .result(accountService.getCurrentAccount())
+                .build();
+    }
 
     @DeleteMapping("/{accountId}")
     ApiResponse<String> deleteAccount(@PathVariable Integer accountId) {
@@ -54,10 +54,4 @@ public class AccountController {
         return ApiResponse.<String>builder().result("Account has been deleted").build();
     }
 
-//    @PutMapping("/{accountId}")
-//    ApiResponse<AccountResponse> updateAccount(@PathVariable Integer accountId, @RequestBody AccountUpdateRequest request) {
-//        return ApiResponse.<AccountResponse>builder()
-//                .result(accountService.updateAccount(accountId, request))
-//                .build();
-//    }
 }
