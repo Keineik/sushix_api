@@ -2,16 +2,18 @@ package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.StaffRequest;
 import com.group09.sushix_api.dto.response.StaffResponse;
+import com.group09.sushix_api.dto.response.WorkHistoryResponse;
 import com.group09.sushix_api.entity.Account;
 import com.group09.sushix_api.entity.Staff;
 import com.group09.sushix_api.entity.StaffInfo;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
-import com.group09.sushix_api.mapper.AccountMapper;
 import com.group09.sushix_api.mapper.StaffMapper;
+import com.group09.sushix_api.mapper.WorkHistoryMapper;
 import com.group09.sushix_api.repository.AccountRepository;
 import com.group09.sushix_api.repository.StaffInfoRepository;
 import com.group09.sushix_api.repository.StaffRepository;
+import com.group09.sushix_api.repository.WorkHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -29,7 +32,9 @@ public class StaffService {
     StaffRepository staffRepository;
     StaffInfoRepository staffInfoRepository;
     AccountRepository accountRepository;
+    WorkHistoryRepository workHistoryRepository;
     StaffMapper staffMapper;
+    WorkHistoryMapper workHistoryMapper;
     PasswordEncoder passwordEncoder;
 
     @Transactional(rollbackFor = Exception.class)
@@ -103,5 +108,13 @@ public class StaffService {
 
     public void deleteStaff(Integer staffId) {
         staffRepository.deleteById(staffId);
+    }
+
+    public List<WorkHistoryResponse> getStaffWorkHistory(Integer staffId) {
+        return workHistoryRepository
+                .getStaffWorkHistory(staffId)
+                .stream()
+                .map(workHistoryMapper::toWorkHistoryResponse)
+                .toList();
     }
 }

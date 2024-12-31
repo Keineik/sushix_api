@@ -33,7 +33,7 @@ begin
 	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID)
 	where (mi.ItemName like @Search)
 		and (@CategoryID = 0 or mi.CategoryID = @CategoryID)
-		and (@BranchID = 0 or bmi.BranchID = @CategoryID)
+		and (@BranchID = 0 or bmi.BranchID = @BranchID)
 		and (@FilterShippable = 0 or bmi.IsShippable = 1)
 	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.SoldQuantity, mi.IsDiscontinued, mi.ImgUrl
 	order by 
@@ -71,39 +71,39 @@ GO
 -- Search by StaffName and StaffID. 
 -- Filter by BranchID, Deparment.
 CREATE OR ALTER PROC usp_FetchStaffs
-	@Page int = 1,
-	@Limit int = 18,
-	@SearchTerm nvarchar(100) = '', -- StaffID/StaffName
-	@BranchID int = 0, --Filter
-	@Department varchar(10) = ''
+    @Page int = 1,
+    @Limit int = 18,
+    @SearchTerm nvarchar(100) = '', -- StaffID/StaffName
+    @BranchID int = 0, --Filter
+    @Department varchar(10) = ''
 AS
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-	DECLARE @Offset int = (@Page - 1) * @Limit;
-	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
+    DECLARE @Offset int = (@Page - 1) * @Limit;
+    DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
 
-	SELECT s.StaffID,
-	s.DeptName,
-	s.BranchID,
-	si.StaffName,
-	si.StaffDOB,
-	si.StaffGender,
-	si.StaffPhoneNumber,
-	si.StaffCitizenID
-	FROM Staff s join StaffInfo si ON s.StaffID = si.StaffID
-	WHERE s.StaffID like @Search or si.StaffName like @Search
-		AND (@BranchID = 0 OR s.BranchID = @BranchID)
-		AND (@Department = '' OR s.DeptName = @Department)
-	ORDER BY s.StaffID,
-	s.DeptName,
-	s.BranchID,
-	si.StaffName,
-	si.StaffDOB,
-	si.StaffGender,
-	si.StaffPhoneNumber,
-	si.StaffCitizenID
-	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+    SELECT s.StaffID,
+    s.DeptName,
+    s.BranchID,
+    si.StaffName,
+    si.StaffDOB,
+    si.StaffGender,
+    si.StaffPhoneNumber,
+    si.StaffCitizenID
+    FROM Staff s join StaffInfo si ON s.StaffID = si.StaffID
+    WHERE s.StaffID like @Search or si.StaffName like @Search
+        AND (@BranchID = 0 OR s.BranchID = @BranchID)
+        AND (@Department = '' OR s.DeptName = @Department)
+    ORDER BY s.StaffID,
+    s.DeptName,
+    s.BranchID,
+    si.StaffName,
+    si.StaffDOB,
+    si.StaffGender,
+    si.StaffPhoneNumber,
+    si.StaffCitizenID
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO
 
@@ -853,7 +853,7 @@ CREATE OR ALTER PROC TransferStaff
     @StaffID INT,         
     @NewBranchID INT,     
     @NewDeptName VARCHAR(10), 
-    @StartDate DATE      
+    @StartDate DATETIME
 AS
 SET XACT_ABORT, NOCOUNT ON
 BEGIN TRY
@@ -882,6 +882,8 @@ BEGIN TRY
 	BEGIN
 		RETURN;
 	END
+
+	SET @StartDate = GETDATE();
 
 	-- Update the QuitDate of the current work history
     UPDATE WorkHistory
@@ -1013,6 +1015,9 @@ EXEC sp_add_jobschedule
 EXEC sp_add_jobserver 
     @job_name = N'UpdateMembershipCards_Daily', 
     @server_name = @@servername;                   
+GO
+
+USE SushiX
 GO
 -- Check the job history for 'UpdateMembershipCards_Daily'
 --SELECT 

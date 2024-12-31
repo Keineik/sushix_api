@@ -1,8 +1,6 @@
 package com.group09.sushix_api.dto.response;
 
 import com.group09.sushix_api.dto.request.OrderDetailsRequest;
-import com.group09.sushix_api.entity.Order;
-import com.group09.sushix_api.entity.RestaurantTable;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

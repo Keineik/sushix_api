@@ -33,8 +33,11 @@ public class AccountService {
 
     @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
     public List<AccountResponse> getAccounts() {
-        log.info("In method get Accounts");
-        return accountRepository.findAll().stream().map(accountMapper::toAccountResponse).toList();
+        return accountRepository
+                .findAll()
+                .stream()
+                .map(accountMapper::toAccountResponse)
+                .toList();
     }
 
     public AccountResponse getAccount(Integer accountId) {

@@ -20,13 +20,6 @@ import java.util.List;
 public class AccountController {
     AccountService accountService;
 
-//    @PostMapping
-//    ApiResponse<AccountResponse> createAccount(@RequestBody @Valid CustomerRegisterRequest request) {
-//        return ApiResponse.<AccountResponse>builder()
-//                .result(accountService.createAccount(request))
-//                .build();
-//    }
-
     @GetMapping
     ApiResponse<List<AccountResponse>> getAccounts() {
         return ApiResponse.<List<AccountResponse>>builder()

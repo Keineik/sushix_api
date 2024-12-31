@@ -154,10 +154,10 @@ CREATE TABLE StaffInfo (
 
 CREATE TABLE WorkHistory (
 	StaffID INT,
-	StartDate DATE,
+	StartDate DATETIME,
 	BranchID INT NOT NULL,
 	DeptName VARCHAR(10),
-	QuitDate DATE,
+	QuitDate DATETIME,
 
 	CONSTRAINT PK_WorkHistory PRIMARY KEY (StaffID, StartDate),
 	CONSTRAINT FK_WorkHistory_Staff FOREIGN KEY (StaffID) REFERENCES Staff(StaffID),
