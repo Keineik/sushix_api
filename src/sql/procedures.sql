@@ -1,6 +1,7 @@
 ﻿Use SushiX
 GO
 
+
 --1. Fetch Items
 ---Fetch items with pagination.
 ---Search by ItemName
@@ -746,7 +747,7 @@ BEGIN TRY
 		BEGIN
 			-- Upgrade the membership card type if sufficient points are available
 			UPDATE MembershipCard
-			SET CardType = @NextCardType
+			SET CardType = @NextCardType, Points = 0, IssuedDate = GETDATE()
 			WHERE CustID = @CustID;
 		END
 	END
@@ -895,3 +896,156 @@ BEGIN CATCH
 	;THROW
 END CATCH;
 GO
+
+--select * from Coupon
+-- 15. Update membership cards based on retention, downgrade, and reset conditions
+GO
+CREATE OR ALTER PROCEDURE UpdateMembershipCards
+AS
+BEGIN
+    SET XACT_ABORT, NOCOUNT ON
+	BEGIN TRY
+		BEGIN TRANSACTION;
+
+		DECLARE @CurrentDate DATE = GETDATE();
+
+		-- Retain current tier if customers meet renewal requirements
+		UPDATE MC
+		SET 
+			Points = CASE 
+						WHEN CT.CardTypeID IN (2, 3) THEN 0 
+						ELSE MC.Points -- Retain points for Membership
+					 END,
+			IssuedDate = @CurrentDate
+		FROM MembershipCard MC
+			JOIN CardType CT ON MC.CardType = CT.CardTypeID
+		WHERE 
+			DATEDIFF(YEAR, MC.IssuedDate, @CurrentDate) >= 1 
+			AND MC.Points >= CT.PointsRequiredForRenewal 
+			AND MC.Points < CT.PointsRequiredForUpgrade;
+
+		-- Reset to Membership tier if the card has no activity for a year
+		UPDATE MC
+		SET 
+			MC.CardType = 1,
+			Points = 0, 
+			IssuedDate = @CurrentDate
+		FROM MembershipCard MC
+		WHERE 
+			DATEDIFF(YEAR, MC.IssuedDate, @CurrentDate) >= 1 
+			AND MC.Points = 0;
+
+		-- Downgrade cards if customers do not meet renewal requirements
+		UPDATE MC
+		SET 
+			MC.CardType = CTPrev.CardTypeID, 
+			Points = 0, 
+			IssuedDate = @CurrentDate 
+		FROM MembershipCard MC
+			JOIN CardType CT ON MC.CardType = CT.CardTypeID
+			JOIN CardType CTPrev ON CTPrev.CardTypeID = CT.CardTypeID - 1 
+		WHERE 
+			DATEDIFF(YEAR, MC.IssuedDate, @CurrentDate) >= 1 
+			AND MC.Points < CT.PointsRequiredForRenewal; 
+
+		COMMIT TRANSACTION;
+	END TRY
+	BEGIN CATCH
+		IF @@trancount > 0 ROLLBACK TRANSACTION;
+		;THROW
+	END CATCH
+END;
+GO
+
+--select * from MembershipCard
+--select * from Customer
+--select * from Staff
+--select * from CardType
+
+--INSERT INTO MembershipCard (IssuedDate, CardType, CustID, StaffID, Points)
+--VALUES 
+--     Case 1: Silver card, 70 points, Eligible for renewal
+--	('2023-12-30', 2, 1, 1, 70),
+
+--     Case 2: Gold card, 50 points, Not eligible for renewal -> downgrade
+--	('2023-12-30', 3, 2, 2, 50),
+
+--     Case 3: Gold card, 0 points (no activity for a year) -> reset to Member
+--	('2023-12-30', 3, 5, 2, 0);
+
+--GO
+
+--EXEC UpdateMembershipCards
+--select * from MembershipCard
+
+USE msdb;
+GO
+
+-- Delete job if it already exists
+IF EXISTS(SELECT job_id FROM msdb.dbo.sysjobs WHERE (name = N'UpdateMembershipCards_Daily'))
+BEGIN
+    EXEC msdb.dbo.sp_delete_job
+        @job_name = N'UpdateMembershipCards_Daily';
+END
+
+EXEC sp_add_job 
+    @job_name = N'UpdateMembershipCards_Daily',  
+    @enabled = 1,                               
+    @description = N'Run UpdateMembershipCards procedure daily.', 
+    @start_step_id = 1;                       
+
+EXEC sp_add_jobstep 
+    @job_name = N'UpdateMembershipCards_Daily', 
+    @step_name = N'Execute UpdateMembershipCards',  
+    @subsystem = N'TSQL',                          
+    @command = N'EXEC UpdateMembershipCards;',     
+    @database_name = N'SushiX',          
+    @on_success_action = 1;                        
+
+EXEC sp_add_jobschedule 
+    @job_name = N'UpdateMembershipCards_Daily', 
+    @name = N'Daily',                    
+    @freq_type = 4,    
+	@freq_interval = 1,
+    @active_start_time = '230000';      -- start time 23:00:00                 
+
+EXEC sp_add_jobserver 
+    @job_name = N'UpdateMembershipCards_Daily', 
+    @server_name = @@servername;                   
+GO
+
+-- Check the job history for 'UpdateMembershipCards_Daily'
+--SELECT 
+--    job_id,
+--    step_id,
+--    step_name,
+--    run_status,
+--    run_date,
+--    run_duration,
+--    message
+--FROM 
+--    dbo.sysjobhistory
+--WHERE 
+--    job_id = (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'UpdateMembershipCards_Daily')
+--ORDER BY 
+--    run_date DESC, run_duration DESC;
+--GO
+
+
+-- Check the schedule for the job
+--SELECT 
+--    s.schedule_id, 
+--    s.name AS schedule_name, 
+--    s.freq_type, 
+--    s.freq_interval, 
+--    s.active_start_time
+--FROM 
+--    msdb.dbo.sysschedules s
+--    INNER JOIN msdb.dbo.sysjobschedules js ON s.schedule_id = js.schedule_id
+--WHERE 
+--    js.job_id = (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'UpdateMembershipCards_Daily');
+--GO
+
+--EXEC sp_start_job @job_name = N'UpdateMembershipCards_Daily';
+--GO
+

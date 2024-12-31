@@ -8,7 +8,7 @@
  *
  * 3. Set the following environment variable to your own data path.
  */
-:setvar DataPath "D:\Projects\sushix_api\src\sql\data\"
+:setvar DataPath "D:\Nam3\HK1\ADB\Project\sushix_api\src\sql\data\"
 
 :setvar DatabaseName "SushiX"
 GO
