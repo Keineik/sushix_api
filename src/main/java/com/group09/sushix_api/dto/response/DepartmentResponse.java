@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DepartmentResponse {
     Integer deptId;
-    Integer branchId;
+    Branch branch;
     String deptName;
     BigDecimal salary;
 }

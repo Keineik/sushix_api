@@ -7,7 +7,6 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface DepartmentMapper {
-    @Mapping(target = "branchId", source = "branch.branchId")
     DepartmentResponse toDepartmentResponse(Department department);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

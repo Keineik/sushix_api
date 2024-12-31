@@ -24,7 +24,7 @@ public class Department {
     @JoinColumn(name = "BranchID", referencedColumnName = "BranchID", updatable = false)
     Branch branch;
 
-    @Column(name = "DeptName", length = 10, nullable = false, updatable = false)
+    @Column(name = "DeptName", nullable = false)
     String deptName;
 
     @Column(name = "Salary", precision = 19, scale = 4)

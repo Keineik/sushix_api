@@ -15,7 +15,6 @@ spring:
     properties:
       hibernate:
         physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-        use_nationalized_character_data: true
 
 jwt:
   signerKey: "e026njxhGoX+RrhfBN7xULmfWxnLMcbD4OXC2GIuOZIxbHgOGQDWw94G6gyNxbz7"

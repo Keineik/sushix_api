@@ -22,7 +22,6 @@ import java.util.List;
 public class DepartmentService {
     DepartmentRepository departmentRepository;
     DepartmentMapper departmentMapper;
-    BranchRepository branchRepository;
 
     public List<DepartmentResponse> getAllDepartments() {
         return departmentRepository
