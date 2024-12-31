@@ -67,47 +67,49 @@ end;
 GO
 
 -- 2. Fetch Staffs
--- Fetch staffs with pagination. 
+--Fetch staffs with pagination. 
 -- Search by StaffName and StaffID. 
 -- Filter by BranchID, Deparment.
---CREATE OR ALTER PROC usp_FetchStaffs
---	@Page int = 1,
---	@Limit int = 18,
---	@SearchTerm nvarchar(100) = '', -- StaffID/StaffName
---	@BranchID int = 0, --Filter
---	@Department varchar(10) = ''
---AS
---BEGIN
---	SET NOCOUNT ON;
+CREATE OR ALTER PROC usp_FetchStaffs
+	@Page int = 1,
+	@Limit int = 18,
+	@SearchTerm nvarchar(100) = '', -- StaffID/StaffName
+	@BranchID int = 0, --Filter
+	@Department varchar(10) = ''
+AS
+BEGIN
+	SET NOCOUNT ON;
 
---	DECLARE @Offset int = (@Page - 1) * @Limit;
---	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
+	DECLARE @Offset int = (@Page - 1) * @Limit;
+	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
 
---	SELECT s.StaffID,
---	s.StaffName,
---	s.StaffDOB,
---	s.StaffGender,
---	s.DeptName,
---	s.BranchID,
---	s.isBranchManager
---	FROM Staff s
---	WHERE s.StaffID like @Search or s.StaffName like @Search
---		AND (@BranchID = 0 OR s.BranchID = @BranchID)
---		AND (@Department = '' OR s.DeptName = @Department)
---	ORDER BY s.StaffID,
---	s.StaffName,
---	s.StaffDOB,
---	s.StaffGender,
---	s.DeptName,
---	s.BranchID,
---	s.isBranchManager
---	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
---END
---GO
+	SELECT s.StaffID,
+	s.DeptName,
+	s.BranchID,
+	si.StaffName,
+	si.StaffDOB,
+	si.StaffGender,
+	si.StaffPhoneNumber,
+	si.StaffCitizenID
+	FROM Staff s join StaffInfo si ON s.StaffID = si.StaffID
+	WHERE s.StaffID like @Search or si.StaffName like @Search
+		AND (@BranchID = 0 OR s.BranchID = @BranchID)
+		AND (@Department = '' OR s.DeptName = @Department)
+	ORDER BY s.StaffID,
+	s.DeptName,
+	s.BranchID,
+	si.StaffName,
+	si.StaffDOB,
+	si.StaffGender,
+	si.StaffPhoneNumber,
+	si.StaffCitizenID
+	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+END
+GO
 
---EXEC sp_FetchStaffs
+EXEC usp_FetchStaffs
 
---GO
+GO
 
 -- 3. Fetch Reservation
 -- Fetch reservations with pagination. 
@@ -180,6 +182,7 @@ CREATE OR ALTER PROC usp_FetchOrders
 	@Limit INT = 18,
 	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
 	@BranchID INT = 0, -- Filter by Branch
+	@CustID INT = 0, -- Filter by Customer
 	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
 	@OrderType NVARCHAR(10) = '', -- Filter by OrderType ('Dine-In', 'Delivery')
 	@SortKey NVARCHAR(20) = 'OrderDateTime', -- Sort by OrderDateTime/EstimatedPrice
@@ -196,6 +199,7 @@ BEGIN
 		o.OrderDateTime,
 		o.OrderStatus,
 		o.BranchID,
+		c.CustID,
 		c.CustName,
 		c.CustPhoneNumber,
 		c.CustEmail,
@@ -213,6 +217,7 @@ BEGIN
 	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
+		AND (@CustID = 0 OR c.CustID = @CustID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR 
 			(@OrderType = 'Delivery' AND do.OrderID IS NOT NULL) OR 
@@ -222,6 +227,7 @@ BEGIN
 		o.OrderDateTime,
 		o.OrderStatus,
 		o.BranchID,
+		c.CustID,
 		c.CustName,
 		c.CustPhoneNumber,
 		c.CustEmail,
