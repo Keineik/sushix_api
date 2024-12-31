@@ -229,7 +229,7 @@ CREATE TABLE Reservation (
 	)) DEFAULT 'Not Confirmed',
 
 	CONSTRAINT FK_Reservation_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
-	CONSTRAINT FK_Reservation_Customter FOREIGN KEY (CustID) REFERENCES Customer(CustID)
+	CONSTRAINT FK_Reservation_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID)
 );
 
 CREATE TABLE [Order] (
@@ -280,7 +280,7 @@ CREATE TABLE DineInOrder (
 
 	CONSTRAINT FK_DineInOrder_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID) ON DELETE CASCADE,
 	CONSTRAINT FK_DineInOrder_Table FOREIGN KEY (BranchID, TableCode) REFERENCES [Table](BranchID, TableCode),
-	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES Reservation(RsID)
+	CONSTRAINT FK_DineInOrder_Reservation FOREIGN KEY (RsID) REFERENCES Reservation(RsID) ON DELETE SET NULL
 );
 
 CREATE TABLE DeliveryOrder (
@@ -318,9 +318,13 @@ CREATE TABLE Invoice(
 	PaymentMethod NVARCHAR(50) NOT NULL,
 	InvoiceDate DATETIME DEFAULT GETDATE(),
 	CouponID INT,
+	BranchID INT NOT NULL,
+	CustID INT NOT NULL,
 
 	CONSTRAINT FK_Invoice_Coupon FOREIGN KEY (CouponID) REFERENCES Coupon(CouponID),
-	CONSTRAINT FK_Invoice_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID)
+	CONSTRAINT FK_Invoice_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
+	CONSTRAINT FK_Invoice_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
+	CONSTRAINT FK_Invoice_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID)
 );
 
 CREATE TABLE CustomerRating (

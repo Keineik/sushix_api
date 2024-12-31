@@ -28,10 +28,6 @@ public class Invoice {
     @Column(name = "Subtotal", precision = 19, scale = 4)
     BigDecimal subtotal;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CouponID")
-    Coupon coupon;
-
     @Column(name = "DiscountRate", precision = 4, scale = 3)
     BigDecimal discountRate;
 
@@ -46,4 +42,16 @@ public class Invoice {
 
     @Column(name = "InvoiceDate", nullable = false)
     Instant invoiceDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CouponID")
+    Coupon coupon;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BranchID", nullable = false)
+    Branch branch;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CustID", nullable = false)
+    Customer customer;
 }

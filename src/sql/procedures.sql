@@ -604,16 +604,24 @@ GO
 -- 1011.2 Update table state when delete dine in order
 GO
 CREATE OR ALTER TRIGGER trg_UpdateTableVacancy ON DineInOrder
-AFTER DELETE
+AFTER DELETE, UPDATE
 AS
 BEGIN
-	-- If now rows affected
+	-- If no rows affected
 	IF (ROWCOUNT_BIG() = 0) RETURN;
 
+	-- Update vacancy where table is no longer occupied by deletion
 	UPDATE [Table] SET isVacant = 1
 	FROM [Table] t, deleted d
-	WHERE t.BranchID = d.BranchID
-		AND t.TableCode = d.TableCode
+	WHERE t.BranchID = d.BranchID AND t.TableCode = d.TableCode
+
+	-- Update vacancy where table is no longer occupied by cancelling order
+	UPDATE [Table] SET isVacant = 1
+	FROM [Table] t, inserted i, [Order] o
+	WHERE i.OrderID = o.OrderID
+		AND t.BranchID = i.BranchID 
+		AND t.TableCode = i.TableCode
+		AND o.OrderStatus = N'CANCELLED'
 END
 GO
 
@@ -629,7 +637,9 @@ CREATE OR ALTER PROCEDURE usp_CreateInvoice (
     @OrderID INT,
 	@PaymentMethod NVARCHAR(50),
 	@TaxRate DECIMAL(4,3) = 0.1,
-	@CouponCode VARCHAR(50)
+	@CouponCode VARCHAR(50),
+
+	@InvoiceID INT OUT
 )
 AS
 SET XACT_ABORT, NOCOUNT ON
@@ -640,6 +650,7 @@ BEGIN TRY
             @ShippingCost DECIMAL(19,4),
             @CardTypeDiscountRate DECIMAL(4,3) = 0.0,
 			@OrderStatus CHAR(10),  
+			@BranchID INT,
 			@Subtotal DECIMAL(19,4),
 			@Total DECIMAL(19,4),
 			@CardType INT,
@@ -659,7 +670,7 @@ BEGIN TRY
 	 WHERE OrderID = @OrderID;
 
 	 -- Check current Order status
-     SELECT @OrderStatus = OrderStatus 
+     SELECT @OrderStatus = OrderStatus, @BranchID = BranchID
 	 FROM [Order]
      WHERE OrderID = @OrderID;
 
@@ -725,8 +736,10 @@ BEGIN TRY
     WHERE mc.CustID = @CustID
 	
     -- Insert Invoice 
-    INSERT INTO Invoice (OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, InvoiceDate, CouponID)
-    VALUES (@OrderID, @Subtotal, @CardTypeDiscountRate, @TaxRate, @ShippingCost, @PaymentMethod, GETDATE(), @CouponID);
+    INSERT INTO Invoice (OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, InvoiceDate, CouponID, BranchID, CustID)
+    VALUES (@OrderID, @Subtotal, @CardTypeDiscountRate, @TaxRate, @ShippingCost, @PaymentMethod, GETDATE(), @CouponID, @BranchID, @CustID);
+
+	SET @InvoiceID = SCOPE_IDENTITY();
 
 	SET @Total = (@Subtotal * (1 - @CardTypeDiscountRate)  - @DiscountAmount + @ShippingCost) * ( 1 + @TaxRate)
 

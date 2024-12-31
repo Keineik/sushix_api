@@ -1,15 +1,14 @@
 package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
+import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
 import com.group09.sushix_api.dto.response.DineInOrderResponse;
+import com.group09.sushix_api.dto.response.InvoiceResponse;
 import com.group09.sushix_api.entity.*;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.OrderMapper;
-import com.group09.sushix_api.repository.AccountRepository;
-import com.group09.sushix_api.repository.DineInOrderRepository;
-import com.group09.sushix_api.repository.OrderRepository;
-import com.group09.sushix_api.repository.RestaurantTableRepository;
+import com.group09.sushix_api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,8 +25,11 @@ public class StaffWorkService {
     AccountRepository accountRepository;
 
     OrderMapper orderMapper;
-    private final DineInOrderRepository dineInOrderRepository;
-    private final RestaurantTableRepository restaurantTableRepository;
+    DineInOrderRepository dineInOrderRepository;
+    RestaurantTableRepository restaurantTableRepository;
+    InvoiceRepository invoiceRepository;
+
+    InvoiceService invoiceService;
 
     @Transactional(rollbackFor = Exception.class)
     public DineInOrderResponse createDineInOrder(DineInOrderCreationRequest request) {
@@ -65,8 +67,19 @@ public class StaffWorkService {
     @Transactional(rollbackFor = Exception.class)
     public DineInOrderResponse updateDineInOrder(Integer orderId,
                                                  DineInOrderCreationRequest request) {
-        orderRepository.deleteById(orderId);
+        orderRepository.myDeleteById(orderId);
         return createDineInOrder(request);
+    }
+
+    public InvoiceResponse createInvoice(InvoiceCreationRequest request) {
+        Integer invoiceId = invoiceRepository.createInvoice(
+                request.getOrderId(),
+                request.getPaymentMethod(),
+                request.getTaxRate(),
+                request.getCouponCode()
+        );
+
+        return invoiceService.getInvoice(invoiceId);
     }
 
     private Staff getStaffFromAuth() {

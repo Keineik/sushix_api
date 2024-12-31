@@ -15,11 +15,11 @@ import java.util.Set;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReservationRequest {
-    String CustName;
+    String custName;
 
-    String CustEmail;
+    String custEmail;
 
-    String CustPhoneNumber;
+    String custPhoneNumber;
 
     @Min(1)
     Integer numOfGuests;
