@@ -15,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,10 @@ import java.util.List;
 public class DepartmentService {
     DepartmentRepository departmentRepository;
     DepartmentMapper departmentMapper;
+
+    public List<String> getAllDistinctDeptName() {
+        return Stream.of("Kitchen", "Reception", "Waiter", "Cashier", "Manager").toList();
+    }
 
     public List<DepartmentResponse> getAllDepartments() {
         return departmentRepository
@@ -37,7 +42,6 @@ public class DepartmentService {
                         .findById(deptId)
                         .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
     }
-
 
     public DepartmentResponse updateDepartment(Integer deptId, DepartmentRequest request) {
         Department department = departmentRepository

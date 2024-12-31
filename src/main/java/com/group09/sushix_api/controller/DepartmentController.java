@@ -21,6 +21,13 @@ import java.util.List;
 public class DepartmentController {
     DepartmentService departmentService;
 
+    @GetMapping("/distinct")
+    ApiResponse<List<String>> getAllDistinctDepartments() {
+        return ApiResponse.<List<String>>builder()
+                .result(departmentService.getAllDistinctDeptName())
+                .build();
+    }
+
     @GetMapping
     ApiResponse<List<DepartmentResponse>> getAllDepartments() {
         return ApiResponse.<List<DepartmentResponse>>builder()
