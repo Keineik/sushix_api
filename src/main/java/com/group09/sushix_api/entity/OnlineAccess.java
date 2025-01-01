@@ -18,10 +18,10 @@ public class OnlineAccess {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "AccessID")
-    Integer itemId;
+    Integer accessId;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "CustID", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CustID", nullable = false, referencedColumnName = "CustID")
     Customer customer;
 
     @Column(name = "StartDateTime")

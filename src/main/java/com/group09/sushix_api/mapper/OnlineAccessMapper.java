@@ -10,7 +10,4 @@ import org.mapstruct.Mapping;
 public interface OnlineAccessMapper {
     @Mapping(target = "custId", source = "customer.custId")
     OnlineAccessResponse toOnlineAccessResponse(OnlineAccess onlineAccess);
-
-    @Mapping(target = "customer", ignore = true)
-    OnlineAccessResponse toOnlineAccess(OnlineAccessRequest onlineAccessRequest);
 }

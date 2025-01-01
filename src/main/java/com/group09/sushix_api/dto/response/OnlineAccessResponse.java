@@ -12,7 +12,7 @@ import java.lang.String;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OnlineAccessResponse {
     Integer accessId;
-    Integer customerId;
+    Integer custId;
     String startDateTime;
     String endDateTime;
 }
