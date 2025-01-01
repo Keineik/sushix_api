@@ -2,8 +2,10 @@ package com.group09.sushix_api.service;
 
 import com.group09.sushix_api.dto.request.CustomerRequest;
 import com.group09.sushix_api.dto.response.CustomerResponse;
+import com.group09.sushix_api.dto.response.MenuItemResponse;
 import com.group09.sushix_api.entity.Account;
 import com.group09.sushix_api.entity.Customer;
+import com.group09.sushix_api.entity.MenuItem;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.CustomerMapper;
@@ -14,8 +16,11 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +37,32 @@ public class CustomerService {
                 .stream()
                 .map(customerMapper::toCustomerResponse)
                 .toList();
+    }
+
+    @Transactional
+    public Map<String, Object> fetchCustomers(
+            Integer page,
+            Integer limit,
+            String searchTerm
+    ) {
+        List<Customer> customers = customerRepository.fetchCustomers(
+                page,
+                limit,
+                searchTerm
+        );
+
+        Integer totalCount = customerRepository.countCustomers(
+                searchTerm
+        );
+        List<CustomerResponse> customerResponses = customers.stream()
+                .map(customerMapper::toCustomerResponse)
+                .toList();
+
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("items", customerResponses);
+        responseMap.put("totalCount", totalCount);
+
+        return responseMap;
     }
 
     public CustomerResponse getCurrentCustomer() {

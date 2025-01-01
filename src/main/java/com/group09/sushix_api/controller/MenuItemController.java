@@ -22,7 +22,7 @@ public class MenuItemController {
     MenuItemService menuItemService;
 
     @GetMapping
-    public ApiResponse<Map<String, Object>> fetchItems(
+    ApiResponse<Map<String, Object>> fetchItems(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "18") Integer limit,
             @RequestParam(defaultValue = "") String searchTerm,

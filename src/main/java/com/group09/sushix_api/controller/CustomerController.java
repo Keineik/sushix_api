@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/customer")
@@ -22,9 +23,19 @@ public class CustomerController {
     CustomerService customerService;
 
     @GetMapping
-    ApiResponse<List<CustomerResponse>> getCustomers() {
-        return ApiResponse.<List<CustomerResponse>>builder()
-                .result(customerService.getAllCustomers())
+    ApiResponse<Map<String, Object>> fetchCustomers(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "18") Integer limit,
+            @RequestParam(defaultValue = "") String searchTerm
+    ) {
+        Map<String, Object> result = customerService.fetchCustomers(
+                page,
+                limit,
+                searchTerm
+        );
+
+        return ApiResponse.<Map<String, Object>>builder()
+                .result(result)
                 .build();
     }
 
