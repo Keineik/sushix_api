@@ -22,7 +22,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
             @Param("SortDirection") Boolean sortDirection
     );
 
-    @Procedure(procedureName = "usp_CountItems")
+    @Procedure(procedureName = "usp_FetchItems_count")
     int countItems(
             @Param("SearchTerm") String searchTerm,
             @Param("CategoryID") Integer categoryId,
