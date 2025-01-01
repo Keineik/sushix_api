@@ -121,12 +121,11 @@ BEGIN
 	SET NOCOUNT ON;
 	DECLARE @Search nvarchar(100) = @SearchTerm + '%';
 	SELECt  @count = count(distinct(s.StaffID))
-	FROM Staff s left join StaffInfo si ON s.StaffID = si.StaffID
+	FROM Staff s join StaffInfo si ON s.StaffID = si.StaffID
     WHERE s.StaffID like @Search or si.StaffName like @Search
         AND (@BranchID = 0 OR s.BranchID = @BranchID)
         AND (@Department = '' OR s.DeptName = @Department)
 END
-
 
 GO
 

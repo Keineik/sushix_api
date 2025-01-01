@@ -1,5 +1,6 @@
 package com.group09.sushix_api.service;
 
+import com.group09.sushix_api.dto.StaffDTO;
 import com.group09.sushix_api.dto.request.StaffRequest;
 import com.group09.sushix_api.dto.response.StaffResponse;
 import com.group09.sushix_api.dto.response.WorkHistoryResponse;
@@ -37,7 +38,7 @@ public class StaffService {
 
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> fetchStaffs(Integer page, Integer limit, String searchTerm, Integer branchId, String department) {
-        List<Staff> items = staffRepository.fetchStaffs(page, limit, searchTerm, branchId, department);
+        List<StaffDTO> items = staffRepository.fetchStaffs(page, limit, searchTerm, branchId, department);
         Integer totalCount = staffRepository.fetchStaffsCount(searchTerm, branchId, department);
 
         Map<String, Object> result = new HashMap<>();
