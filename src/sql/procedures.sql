@@ -55,7 +55,7 @@ as
 begin
 	SET NOCOUNT ON;
 
-    declare @Search nvarchar(100) = '%' + @SearchTerm + '%';
+    declare @Search nvarchar(100) = @SearchTerm + '%';
 
 	select @count = count(distinct(mi.ItemID))
 	from MenuItem mi left join BranchMenuItem bmi on (bmi.ItemID = mi.ItemID and @BranchID != 0)
@@ -81,7 +81,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @Offset int = (@Page - 1) * @Limit;
-    DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search nvarchar(100) = @SearchTerm + '%';
 
     SELECT s.StaffID,
     s.DeptName,
@@ -119,7 +119,7 @@ CREATE OR ALTER PROC usp_FetchStaffs_count
 AS
 BEGIN
 	SET NOCOUNT ON;
-	DECLARE @Search nvarchar(100) = '%' + @SearchTerm + '%';
+	DECLARE @Search nvarchar(100) = @SearchTerm + '%';
 	SELECt  @count = count(distinct(s.StaffID))
 	FROM Staff s left join StaffInfo si ON s.StaffID = si.StaffID
     WHERE s.StaffID like @Search or si.StaffName like @Search
@@ -399,7 +399,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @Offset INT = (@Page - 1) * @Limit;
-    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
     SELECT 
         CustID,
@@ -410,7 +410,8 @@ BEGIN
         CustCitizenID
     FROM Customer
     WHERE (CAST(CustID AS NVARCHAR) LIKE @Search OR CustName LIKE @Search)
-    ORDER BY CustID
+    ORDER BY (SELECT 1)
+	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
 GO
 
@@ -421,7 +422,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
     SELECT 
         @Count = COUNT(DISTINCT CustID)
@@ -449,7 +450,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @Offset INT = (@Page - 1) * @Limit;
-    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
     SELECT 
         CouponID,
@@ -494,7 +495,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
     SELECT 
         @Count = COUNT(distinct CouponID)
