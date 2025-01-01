@@ -35,6 +35,13 @@ public class MembershipCardController {
                 .build();
     }
 
+    @GetMapping("/customer/{custId}")
+    ApiResponse<MembershipCardResponse> getMembershipCardByCustomerId(@PathVariable Integer custId) {
+        return ApiResponse.<MembershipCardResponse>builder()
+                .result(membershipCardService.getMembershipCardByCustomerId(custId))
+                .build();
+    }
+
     @PostMapping
     ApiResponse<MembershipCardResponse> createMembershipCard(@RequestBody @Valid MembershipCardRequest request) {
         return ApiResponse.<MembershipCardResponse>builder()

@@ -42,6 +42,13 @@ public class MembershipCardService {
                         .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
     }
 
+    public MembershipCardResponse getMembershipCardByCustomerId(Integer custId) {
+        MembershipCard membershipCard = membershipCardRepository
+                .findByCustomer_CustId(custId)
+                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+        return membershipCardMapper.toMembershipCardResponse(membershipCard);
+    }
+
     public MembershipCardResponse createMembershipCard(MembershipCardRequest request) {
         // Check if the customer and card type exist
         Customer customer = customerRepository

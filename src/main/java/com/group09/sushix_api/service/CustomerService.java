@@ -25,7 +25,7 @@ public class CustomerService {
     CustomerRepository customerRepository;
     CustomerMapper customerMapper;
 
-    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN, SCOPE_STAFF, SCOPE_MANAGER')")
+    //@PreAuthorize("hasAnyAuthority('SCOPE_ADMIN, SCOPE_STAFF, SCOPE_MANAGER')")
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository
                 .findAll()
