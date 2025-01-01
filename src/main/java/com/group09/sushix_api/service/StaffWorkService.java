@@ -7,6 +7,7 @@ import com.group09.sushix_api.dto.response.InvoiceResponse;
 import com.group09.sushix_api.entity.*;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
+import com.group09.sushix_api.mapper.OrderDetailsMapper;
 import com.group09.sushix_api.mapper.OrderMapper;
 import com.group09.sushix_api.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +26,9 @@ public class StaffWorkService {
     AccountRepository accountRepository;
 
     OrderMapper orderMapper;
-    DineInOrderRepository dineInOrderRepository;
-    RestaurantTableRepository restaurantTableRepository;
     InvoiceRepository invoiceRepository;
+    OrderDetailsRepository orderDetailsRepository;
+    OrderDetailsMapper orderDetailsMapper;
 
     InvoiceService invoiceService;
 
@@ -60,7 +61,11 @@ public class StaffWorkService {
                 .tableCode(request.getTableCode())
                 .branchId(staff.getDepartment().getBranch().getBranchId())
                 .rsId(request.getRsId())
-                .orderDetails(request.getOrderDetails())
+                .orderDetails(orderDetailsRepository
+                        .findAllByOrderId(order.getOrderId())
+                        .stream()
+                        .map(orderDetailsMapper::toOrderDetailsResponse)
+                        .toList())
                 .build();
     }
 

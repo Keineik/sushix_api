@@ -1,3 +1,8 @@
+/*
+ * HOW TO RUN THIS SCRIPT:
+ * Run table.sql first then run this one
+ */
+
 USE SushiX
 GO
 

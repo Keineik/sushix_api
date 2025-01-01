@@ -1,10 +1,9 @@
 package com.group09.sushix_api.dto.response;
 
-import com.group09.sushix_api.dto.request.OrderDetailsRequest;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Set;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -16,5 +15,5 @@ public class DineInOrderResponse {
     Integer tableCode;
     Integer branchId;
     Integer rsId;
-    Set<OrderDetailsRequest> orderDetails;
+    List<OrderDetailsResponse> orderDetails;
 }

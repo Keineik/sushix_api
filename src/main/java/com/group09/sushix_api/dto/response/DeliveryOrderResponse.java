@@ -1,11 +1,10 @@
 package com.group09.sushix_api.dto.response;
 
 import com.group09.sushix_api.dto.request.OrderDetailsRequest;
-import com.group09.sushix_api.entity.Order;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Set;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -16,6 +15,6 @@ public class DeliveryOrderResponse {
     OrderResponse order;
     String deliveryAddress;
     String deliveryDateTime;
-    Set<OrderDetailsRequest> orderDetails;
+    List<OrderDetailsResponse> orderDetails;
 }
 

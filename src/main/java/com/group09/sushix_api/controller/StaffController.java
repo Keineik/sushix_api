@@ -2,7 +2,6 @@ package com.group09.sushix_api.controller;
 
 
 import com.group09.sushix_api.dto.request.StaffRequest;
-import com.group09.sushix_api.dto.response.AccountResponse;
 import com.group09.sushix_api.dto.response.ApiResponse;
 import com.group09.sushix_api.dto.response.StaffResponse;
 import com.group09.sushix_api.dto.response.WorkHistoryResponse;
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/staff")
@@ -24,6 +24,26 @@ import java.util.List;
 public class StaffController {
     StaffService staffService;
 
+    @GetMapping
+    public ApiResponse<Map<String, Object>> fetchStaffs(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "18") Integer limit,
+            @RequestParam(defaultValue = "") String searchTerm,
+            @RequestParam(defaultValue = "0") Integer branchId,
+            @RequestParam(defaultValue = "") String department
+    ) {
+        Map<String, Object> result = staffService.fetchStaffs(
+                page,
+                limit,
+                searchTerm,
+                branchId,
+                department
+        );
+
+        return ApiResponse.<Map<String, Object>>builder()
+                .result(result)
+                .build();
+    }
 
     @GetMapping("/{staffId}")
     public ApiResponse<StaffResponse> getStaff(@PathVariable("staffId") Integer staffId) {

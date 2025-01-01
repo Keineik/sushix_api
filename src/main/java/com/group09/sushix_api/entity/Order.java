@@ -38,7 +38,4 @@ public class Order {
     @ManyToOne(optional = false)
     @JoinColumn(name = "BranchID", nullable = false)
     Branch branch;
-
-    @OneToMany(mappedBy = "order")
-    Set<OrderDetails> orderDetails;
 }

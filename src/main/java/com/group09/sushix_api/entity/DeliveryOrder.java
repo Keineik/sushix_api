@@ -28,6 +28,6 @@ public class DeliveryOrder {
     String deliveryAddress;
 
     @Column(name = "DeliveryDateTime", nullable = false)
-    Instant deliveryDateTime;
+    String deliveryDateTime;
 }
 

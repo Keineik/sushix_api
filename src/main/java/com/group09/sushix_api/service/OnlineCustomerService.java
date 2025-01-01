@@ -9,12 +9,10 @@ import com.group09.sushix_api.entity.Customer;
 import com.group09.sushix_api.entity.Order;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
+import com.group09.sushix_api.mapper.OrderDetailsMapper;
 import com.group09.sushix_api.mapper.OrderMapper;
 import com.group09.sushix_api.mapper.ReservationMapper;
-import com.group09.sushix_api.repository.AccountRepository;
-import com.group09.sushix_api.repository.CustomerRepository;
-import com.group09.sushix_api.repository.OrderRepository;
-import com.group09.sushix_api.repository.ReservationRepository;
+import com.group09.sushix_api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,9 +29,11 @@ public class OnlineCustomerService {
     OrderRepository orderRepository;
     AccountRepository accountRepository;
     CustomerRepository customerRepository;
+    OrderDetailsRepository orderDetailsRepository;
 
     ReservationMapper reservationMapper;
     OrderMapper orderMapper;
+    OrderDetailsMapper orderDetailsMapper;
 
     @Transactional(rollbackFor = Exception.class)
     public ReservationResponse createReservation(ReservationRequest request) {
@@ -116,7 +116,11 @@ public class OnlineCustomerService {
                 .order(orderMapper.toOrderResponse(order))
                 .deliveryAddress(request.getDeliveryAddress())
                 .deliveryDateTime(request.getDeliveryDateTime())
-                .orderDetails(request.getOrderDetails())
+                .orderDetails(orderDetailsRepository
+                        .findAllByOrderId(order.getOrderId())
+                        .stream()
+                        .map(orderDetailsMapper::toOrderDetailsResponse)
+                        .toList())
                 .build();
     }
 }

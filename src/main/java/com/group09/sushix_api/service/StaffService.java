@@ -21,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +34,18 @@ public class StaffService {
     StaffMapper staffMapper;
     WorkHistoryMapper workHistoryMapper;
     PasswordEncoder passwordEncoder;
+
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> fetchStaffs(Integer page, Integer limit, String searchTerm, Integer branchId, String department) {
+        List<Staff> items = staffRepository.fetchStaffs(page, limit, searchTerm, branchId, department);
+        Integer totalCount = staffRepository.fetchStaffsCount(searchTerm, branchId, department);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("items", items);
+        result.put("totalCount", totalCount);
+
+        return result;
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public StaffResponse getStaff(Integer staffId) {
