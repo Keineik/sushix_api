@@ -1073,6 +1073,115 @@ BEGIN
 	END CATCH
 END;
 GO
+
+--16. Thống kê doanh thu theo ngày/tháng/quý/năm cho một chi nhánh cụ thể hoặc cho toàn công ty.
+CREATE OR ALTER PROCEDURE usp_GetRevenueStats
+    @BranchID INT = 0,       -- 0 = all
+    @GroupBy NVARCHAR(10) = 'day' -- 'day', 'month', 'quarter', 'year'
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @GroupBy NOT IN ('day', 'month', 'quarter', 'year')
+    BEGIN
+        RAISERROR('Invalid value for @GroupBy. Valid options are day, month, quarter, year.', 16, 1);
+        RETURN;
+    END
+
+    -- Get range
+    DECLARE @StartDate DATE, @EndDate DATE;
+    SET @EndDate = GETDATE();
+
+    IF @GroupBy = 'day'
+    BEGIN
+        SET @StartDate = DATEFROMPARTS(YEAR(@EndDate), MONTH(@EndDate), 1); -- Day 1 of current month
+    END
+    ELSE IF @GroupBy = 'month'
+    BEGIN
+        SET @StartDate = DATEFROMPARTS(YEAR(@EndDate), 1, 1); -- 1/1/x
+    END
+    ELSE IF @GroupBy = 'quarter'
+    BEGIN
+        SET @StartDate = DATEFROMPARTS(YEAR(@EndDate), 1, 1); -- 1/1/x
+    END
+    ELSE IF @GroupBy = 'year'
+    BEGIN
+        SET @StartDate = '1900-01-01'; -- All data
+    END
+
+    -- Return format
+    DECLARE @GroupByFormat NVARCHAR(20);
+    SET @GroupByFormat = 
+        CASE @GroupBy
+            WHEN 'day' THEN 'yyyy-MM-dd'
+            WHEN 'month' THEN 'yyyy-MM'
+            WHEN 'quarter' THEN 'yyyy-QQ'
+            WHEN 'year' THEN 'yyyy'
+        END;
+
+    -- Magic
+    SELECT 
+        FORMAT(InvoiceDate, @GroupByFormat) AS RevenuePeriod,
+        ISNULL(@BranchID, 0) AS Branch,
+        SUM(Subtotal - (Subtotal * DiscountRate / 100) + ShippingCost + (Subtotal * TaxRate / 100)) AS TotalRevenue
+    FROM Invoice
+    WHERE 
+        (BranchID = @BranchID OR @BranchID = 0) AND
+        (InvoiceDate >= @StartDate AND InvoiceDate <= @EndDate)
+    GROUP BY 
+        FORMAT(InvoiceDate, @GroupByFormat)
+    ORDER BY 
+        RevenuePeriod;
+END;
+GO
+
+--17. Thống kê doanh thu theo từng món, món chạy nhất trong khoảng cụ thể theo chi nhánh, khu vực.
+CREATE PROCEDURE usp_GetItemSalesStats
+    @BranchID INT = 0,          -- 0 for all branches
+    @Region NVARCHAR(50) = '',   -- '' for all regions, N'Thành Phố Hồ Chính Minh', N'Hà Nội'
+    @TimePeriod INT = 0,            -- Days. 0: All time
+	@SortDirection BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate TimePeriod input
+    IF @TimePeriod < 0
+    BEGIN
+        RAISERROR('Invalid value for @TimePeriod.', 16, 1);
+        RETURN;
+    END
+
+    -- Determine date range based on TimePeriod
+    DECLARE @StartDate DATE, @EndDate DATE;
+    SET @EndDate = GETDATE();
+
+    IF @TimePeriod = 0
+        SET @StartDate = '1900-01-01'; -- All time
+    ELSE
+        SET @StartDate = DATEADD(DAY, -@TimePeriod, @EndDate); -- Subtract days based on @TimePeriod
+
+    -- Calculate item sales statistics
+	SELECT 
+	    MI.ItemID,
+	    MI.ItemName,
+	    ISNULL(@BranchID, 0) AS Branch,
+	    SUM(OD.Quantity) AS TotalSoldQuantity,
+	    SUM(OD.Quantity * OD.UnitPrice) AS TotalRevenue
+	FROM OrderDetails OD
+	JOIN MenuItem MI ON OD.ItemID = MI.ItemID
+	JOIN [Order] O ON OD.OrderID = O.OrderID
+	JOIN Branch B ON B.BranchID = O.BranchID
+    WHERE 
+        (O.BranchID = @BranchID OR @BranchID = 0) AND
+        (B.BranchRegion = @Region OR @Region ='') AND
+        (O.OrderDateTime >= @StartDate AND O.OrderDateTime <= @EndDate)
+    GROUP BY 
+        MI.ItemID, MI.ItemName
+    ORDER BY TotalRevenue DESC
+END;
+GO
+
 --select * from MembershipCard
 --select * from Customer
 --select * from Staff
