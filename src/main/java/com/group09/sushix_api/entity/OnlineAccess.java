@@ -25,8 +25,8 @@ public class OnlineAccess {
     Customer customer;
 
     @Column(name = "StartDateTime")
-    Instant startDateTime;
+    String startDateTime;
 
     @Column(name = "EndDateTime")
-    Instant endDateTime;
+    String endDateTime;
 }

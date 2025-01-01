@@ -1182,6 +1182,46 @@ BEGIN
 END;
 GO
 
+GO
+-- 18. Ghi lại lịch sử truy cập trên web của khách hàng
+CREATE OR ALTER PROCEDURE usp_LogCustomerOnlineAccess (
+	@CustID INT,
+	@IsStart BIT,
+
+	@AccessID INT OUT
+)
+AS
+BEGIN
+BEGIN TRY
+	SET XACT_ABORT, NOCOUNT ON;
+	
+	IF (@IsStart = 1) 
+	BEGIN
+		INSERT INTO OnlineAccess (CustID, StartDateTime, EndDateTime)
+		VALUES (@CustID, GETDATE(), NULL);
+		SET @AccessID = SCOPE_IDENTITY();
+	END
+	ELSE
+	BEGIN
+		SET @AccessID = (
+			SELECT TOP 1 AccessID 
+			FROM OnlineAccess 
+			WHERE EndDateTime IS NULL AND CustID = @CustID
+			ORDER BY StartDateTime
+		)
+		UPDATE OnlineAccess SET EndDateTime = GETDATE()
+		WHERE AccessID = @AccessID;
+	END
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+END
+GO
+
 --select * from MembershipCard
 --select * from Customer
 --select * from Staff

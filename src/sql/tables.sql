@@ -8,7 +8,7 @@
  *
  * 3. Set the following environment variable to your own data path.
  */
-:setvar DataPath "G:\Github\sushix_api\src\sql\data\"
+:setvar DataPath "D:\Projects\sushix_api\src\sql\data\"
 
 :setvar DatabaseName "SushiX"
 GO

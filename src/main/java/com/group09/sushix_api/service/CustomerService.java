@@ -3,14 +3,18 @@ package com.group09.sushix_api.service;
 import com.group09.sushix_api.dto.request.CustomerRequest;
 import com.group09.sushix_api.dto.response.CustomerResponse;
 import com.group09.sushix_api.dto.response.MenuItemResponse;
+import com.group09.sushix_api.dto.response.OnlineAccessResponse;
 import com.group09.sushix_api.entity.Account;
 import com.group09.sushix_api.entity.Customer;
 import com.group09.sushix_api.entity.MenuItem;
+import com.group09.sushix_api.entity.OnlineAccess;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.CustomerMapper;
+import com.group09.sushix_api.mapper.OnlineAccessMapper;
 import com.group09.sushix_api.repository.AccountRepository;
 import com.group09.sushix_api.repository.CustomerRepository;
+import com.group09.sushix_api.repository.OnlineAccessRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,8 @@ public class CustomerService {
     AccountRepository accountRepository;
     CustomerRepository customerRepository;
     CustomerMapper customerMapper;
+    OnlineAccessRepository onlineAccessRepository;
+    OnlineAccessMapper onlineAccessMapper;
 
     //@PreAuthorize("hasAnyAuthority('SCOPE_ADMIN, SCOPE_STAFF, SCOPE_MANAGER')")
     public List<CustomerResponse> getAllCustomers() {
@@ -88,6 +95,38 @@ public class CustomerService {
                 customerRepository
                         .findById(customerId)
                         .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
+    }
+
+    public List<OnlineAccessResponse> getCustomerOnlineAccess(Integer custId) {
+        return onlineAccessRepository
+                .findAllByCustId(custId)
+                .stream()
+                .map(onlineAccessMapper::toOnlineAccessResponse)
+                .toList();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public OnlineAccessResponse logCustomerOnlineAccess(Boolean isStart) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.equals(auth.getName(), "anonymousUser"))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        Integer accountId = Integer.valueOf(auth.getName());
+        Account account = accountRepository
+                .findById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+        Customer customer = account.getCustomer();
+
+        Integer accessId = onlineAccessRepository.logCustomerOnlineAccess(
+                customer.getCustId(),
+                isStart
+        );
+
+        OnlineAccess onlineAccess = onlineAccessRepository
+                .findById(accessId)
+                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+
+        return onlineAccessMapper.toOnlineAccessResponse(onlineAccess);
     }
 
     public CustomerResponse createCustomer(CustomerRequest request) {
