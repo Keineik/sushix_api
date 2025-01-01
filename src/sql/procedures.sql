@@ -295,7 +295,7 @@ END
 
 
 GO
--- 
+
 -- 5. Fetch Invoices
 -- - Fetch invoices with pagination. 
 -- - JOIN with Customer table to get CustName, CustPhoneNumber, CustEmail. 
@@ -542,6 +542,7 @@ BEGIN CATCH
 	;THROW
 END CATCH
 GO
+
 
 -- 10. Add Delivery Order
 GO
@@ -869,6 +870,13 @@ BEGIN TRY
             AND [Table].BranchID = dio.BranchID 
             AND [Table].TableCode = dio.TableCode
     );
+	-- Update SoldQuantity for each MenuItem
+	UPDATE MenuItem
+	SET SoldQuantity = SoldQuantity + od.Quantity
+	FROM MenuItem mi
+		INNER JOIN OrderDetails od ON mi.ItemID = od.ItemID
+	WHERE od.OrderID = @OrderID;
+
 	-- Update OrderStatus to Completed
     UPDATE [Order] SET OrderStatus = 'COMPLETED' WHERE OrderID = @OrderID;
 
@@ -879,6 +887,11 @@ BEGIN CATCH
 	;THROW
 END CATCH
 GO
+
+--UPDATE Coupon
+--SET ExpiryDate = '20251231'
+--WHERE CouponID = 1
+
 
 --EXEC usp_CreateInvoice 
 --    @OrderID = 1, 
