@@ -28,7 +28,4 @@ public class Staff {
             @JoinColumn(name = "DeptName", referencedColumnName = "DeptName")
     })
     Department department;
-
-    @Column(name = "isBranchManager")
-    Boolean isBranchManager = false;
 }

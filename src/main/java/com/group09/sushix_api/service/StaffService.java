@@ -63,7 +63,6 @@ public class StaffService {
     @Transactional(rollbackFor = Exception.class)
     public StaffResponse createStaff(StaffRequest request) {
         Staff staff = staffMapper.toStaff(request);
-        staff.setIsBranchManager(Objects.equals(request.getDeptName(), "Manager"));
         staff = staffRepository.save(staff);
 
         StaffInfo staffInfo = staffMapper.toStaffInfo(request);

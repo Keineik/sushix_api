@@ -1,4 +1,4 @@
-/*
+﻿/*
  * HOW TO RUN THIS SCRIPT:
  *
  * 1. Enable full-text search on your SQL Server instance.
@@ -95,14 +95,6 @@ CREATE TABLE MenuItem (
     CONSTRAINT FK_MenuItem_MenuCategory FOREIGN KEY (CategoryID) REFERENCES MenuCategory(CategoryID) ON DELETE SET NULL
 );
 
-CREATE TABLE MenuCombo (
-    ComboID INT IDENTITY(1,1) PRIMARY KEY,
-    ComponentID INT,
-
-	CONSTRAINT FK_MenuCombo_MenuItem1 FOREIGN KEY (ComboID) REFERENCES MenuItem(ItemID),
-    CONSTRAINT FK_MenuCombo_MenuItem2 FOREIGN KEY (ComponentID) REFERENCES MenuItem(ItemID)
-);
-
 CREATE TABLE Branch (
     BranchID INT IDENTITY(1,1) PRIMARY KEY,
     BranchName NVARCHAR(100) NOT NULL,
@@ -140,7 +132,6 @@ CREATE TABLE Staff (
     StaffID INT IDENTITY(1,1) PRIMARY KEY,
     DeptName VARCHAR(10),
     BranchID INT,
-	isBranchManager BIT DEFAULT 0,
 
     CONSTRAINT FK_Staff_Department FOREIGN KEY (BranchID, DeptName) REFERENCES Department(BranchID, DeptName)
 );
@@ -176,6 +167,9 @@ CREATE TABLE Customer (
     CustPhoneNumber VARCHAR(20),
     CustCitizenID VARCHAR(20)
 );
+-- Because null is allowed but if not null, it must be unique
+CREATE UNIQUE INDEX UQ_Customer_CustPhoneNumber ON Customer(CustPhoneNumber) WHERE CustPhoneNumber IS NOT NULL;
+CREATE UNIQUE INDEX UQ_Customer_CustCitizenID ON Customer(CustCitizenID) WHERE CustCitizenID IS NOT NULL;
 
 CREATE TABLE CardType (
     CardTypeID INT IDENTITY(1,1) PRIMARY KEY,
@@ -353,7 +347,7 @@ CREATE TABLE StaffRating (
 	StaffRatingID INT IDENTITY(1,1) PRIMARY KEY,
 	RatingID INT,
 	StaffID INT,
-	StaffRating INT NOT NULL,
+	StaffRating INT NOT NULL CHECK (StaffRating >= 0 AND StaffRating <= 10),
 
 	CONSTRAINT UQ_RatingID_StaffID UNIQUE(RatingID, StaffID),
 	CONSTRAINT FK_StaffRating_CustomerRating FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
@@ -471,6 +465,25 @@ WITH (
 	FIRSTROW = 2,
 	FORMAT = 'CSV'
 );
+-- Promote 1 at each branch to Manager
+UPDATE s SET DeptName = 'Manager'
+FROM STAFF s
+WHERE s.StaffID = (SELECT MIN(StaffID) FROM STAFF WHERE BranchID = s.BranchID);
+
+-- *****************************************************
+
+PRINT 'Loading StaffInfo';
+BULK INSERT StaffInfo FROM '$(DataPath)StaffInfo.csv'
+WITH (
+    CHECK_CONSTRAINTS,
+    CODEPAGE='ACP',
+    DATAFILETYPE = 'char',
+    FIELDTERMINATOR= ',',
+    KEEPIDENTITY,
+    TABLOCK,
+	FIRSTROW = 2,
+	FORMAT = 'CSV'
+);
 
 ---- ******************************************************
 
@@ -503,77 +516,166 @@ WITH (
 );
 
 -- ******************************************************
-
-PRINT 'Loading MembershipCard';
-BULK INSERT MembershipCard FROM '$(DataPath)MembershipCard.csv'
-WITH (
-    CHECK_CONSTRAINTS,
-    CODEPAGE='ACP',
-    DATAFILETYPE = 'char',
-    FIELDTERMINATOR= ',',
-    KEEPIDENTITY,
-    TABLOCK,
-	FIRSTROW = 2,
-	FORMAT = 'CSV'
-);
+	
+-- Let's pretend that every branch has the same amount of tables and seats
+PRINT 'Loading Table';
+INSERT INTO [Table] (BranchID, TableCode, NumOfSeats, isVacant)
+SELECT 
+	b.BranchID, 
+	m.CategoryID, 
+	IIF(m.CategoryID >= 20, 10, IIF(m.CategoryID >= 10, 5, 2)),
+	1
+FROM Branch b, MenuCategory m -- Menu Category is just for Catesian product
 
 -- ******************************************************
 
 PRINT 'Loading Order';
-BULK INSERT [Order] FROM '$(DataPath)Order.csv'
-WITH (
-    CHECK_CONSTRAINTS,
-    CODEPAGE='ACP',
-    DATAFILETYPE = 'char',
-    FIELDTERMINATOR= ',',
-    KEEPIDENTITY,
-    TABLOCK,
-	FIRSTROW = 2,
-	FORMAT = 'CSV'
-);
+-- Historical Order
+DECLARE @FromDate DATETIME = '2023-05-01';
+DECLARE @ToDate DATETIME = GETDATE();
+INSERT INTO [Order] (OrderDateTime, OrderStatus, StaffID, CustID, BranchID, OrderType)
+SELECT TOP 100000
+    DATEADD(hour, s.BranchID, DATEADD(day, RAND(CHECKSUM(NEWID())) * (1 + DATEDIFF(day, @FromDate, @ToDate)), @FromDate)),
+    IIF(c.CustID % 23 = 0, 'CANCELLED', 'COMPLETED'),
+    s.StaffID,
+    c.CustID,
+    s.BranchID,
+    IIF(c.CustID % 7 = 0, 'D', 'I')
+FROM Customer c, Staff s
+WHERE s.BranchID = s.BranchID
+ORDER BY NEWID()
+
+-- Today Order
+INSERT INTO [Order] (OrderDateTime, OrderStatus, StaffID, CustID, BranchID, OrderType)
+SELECT TOP 2000
+    DATEADD(hour, s.BranchID + 1, GETDATE()),
+    CASE
+		WHEN c.CustID % 4 = 0 THEN 'COMPLETED'
+		WHEN c.CustID % 4 = 1 THEN 'DELIVERED'
+		WHEN c.CustID % 4 = 2 THEN 'VERIFIED'
+		ELSE 'UNVERIFIED'
+	END,
+    s.StaffID,
+    c.CustID,
+    s.BranchID,
+    IIF(c.CustID % 7 = 0, 'D', 'I')
+FROM Customer c, Staff s
+WHERE s.BranchID = s.BranchID
+ORDER BY NEWID()
 
 -- ******************************************************
 
-PRINT 'Loading OrderDetails';
-BULK INSERT OrderDetails FROM '$(DataPath)OrderDetails.csv'
-WITH (
-    CHECK_CONSTRAINTS,
-    CODEPAGE='ACP',
-    DATAFILETYPE = 'char',
-    FIELDTERMINATOR= ',',
-    KEEPIDENTITY,
-    TABLOCK,
-	FIRSTROW = 2,
-	FORMAT = 'CSV'
-);
-
--- ******************************************************
-
-PRINT 'Loading Table';
-BULK INSERT [Table] FROM '$(DataPath)Table.csv'
-WITH (
-    CHECK_CONSTRAINTS,
-    CODEPAGE='ACP',
-    DATAFILETYPE = 'char',
-    FIELDTERMINATOR= ',',
-    KEEPIDENTITY,
-    TABLOCK,
-	FIRSTROW = 2,
-	FORMAT = 'CSV'
-);
+PRINT 'Loading OrderDetails'
+INSERT INTO OrderDetails(OrderID, ItemID, UnitPrice, Quantity)
+SELECT TOP 1000000 -- just to be save incase there is too many data
+	o.OrderID,
+	mi.ItemID,
+	mi.UnitPrice,
+	ABS(CHECKSUM(NEWID())) % 10 + 1
+FROM [Order] o, MenuItem mi
+WHERE
+	((o.OrderID % 180 + 1) = mi.ItemID)
+	OR (o.OrderID * ItemID % 41 = 0)
 
 -- ******************************************************
 
 PRINT 'Loading DineInOrder';
-BULK INSERT DineInOrder FROM '$(DataPath)DineInOrder.csv'
-WITH (
-    CHECK_CONSTRAINTS,
-    CODEPAGE='ACP',
-    DATAFILETYPE = 'char',
-    FIELDTERMINATOR= ',',
-    KEEPIDENTITY,
-    TABLOCK,
-	FIRSTROW = 2,
-	FORMAT = 'CSV'
-);
+INSERT INTO DineInOrder (OrderID, TableCode, BranchID, RsID)
+SELECT o.OrderID, o.orderID % 27 + 1, o.BranchID, NULL
+FROM [Order] o
+WHERE o.OrderType = 'I'
 
+-- ******************************************************
+
+PRINT 'Loading DeliveryOrder';
+INSERT INTO DeliveryOrder (OrderID, DeliveryAddress, DeliveryDateTime)
+SELECT o.OrderID, N'766 Võ Văn Kiệt, Phường 1, Quận 5, Hồ Chí Minh', DATEADD(hour, 1, o.OrderDateTime)
+FROM [Order] o
+WHERE o.OrderType = 'D'
+
+-- ******************************************************
+
+PRINT 'Loading Invoice'
+INSERT INTO Invoice(OrderID, Subtotal, DiscountRate, TaxRate, ShippingCost, PaymentMethod, InvoiceDate, CouponID, BranchID, CustID)
+SELECT 
+	o.OrderID, 
+	SUM(od.Quantity * od.UnitPrice),
+	0,
+	0.08,
+	IIF(o.OrderType = 'D', 30000, 0),
+	N'Tiền mặt',
+	DATEADD(hour, 2, o.OrderDateTime),
+	NULL,
+	o.BranchID,
+	o.CustID
+FROM [Order] o
+LEFT JOIN OrderDetails od
+	ON o.OrderID = od.OrderID
+WHERE o.OrderStatus = 'COMPLETED'
+GROUP BY
+	o.OrderID, o.OrderDateTime, o.BranchID, o.CustID, o.OrderType
+
+-- ******************************************************
+
+PRINT 'Loading MembershipCard'
+INSERT INTO MembershipCard(IssuedDate, CardType, CustID, StaffID, Points)
+SELECT '2024-03-01', 1, c.CustID, c.CustID % 280 + 1, SUM(Subtotal * (1 - i.DiscountRate) * (1 + i.taxRate))/100000
+FROM Customer c
+JOIN Invoice i ON c.CustID = i.CustID
+WHERE c.CustID % 17 = 0 AND i.InvoiceDate >= '2024-03-01'
+GROUP BY c.CustID
+
+-- ******************************************************
+
+PRINT 'Loading WorkHistory'
+INSERT INTO WorkHistory(StaffID, StartDate, BranchID, DeptName, QuitDate)
+SELECT s.StaffID, '2023-05-01', s.BranchID, s.DeptName, NULL
+FROM Staff s
+
+-- ******************************************************
+
+PRINT 'Loading CustomerRating'
+INSERT INTO CustomerRating(ServiceRating, LocationRating, FoodRating, PricingRating, AmbianceRating, FeedbackCmt, FeedbackDate, InvoiceID)
+SELECT TOP 150
+	ABS(CHECKSUM(NEWID())) % 10 + 1,
+	ABS(CHECKSUM(NEWID())) % 10 + 1,
+	ABS(CHECKSUM(NEWID())) % 10 + 1,
+	ABS(CHECKSUM(NEWID())) % 10 + 1,
+	ABS(CHECKSUM(NEWID())) % 10 + 1,
+	N'Ngon hơn Tokyodeli, web xịn hơn Tokyodeli',
+	DATEADD(minute, 15, i.InvoiceDate),
+	i.InvoiceID
+FROM Invoice i
+ORDER BY NEWID();
+
+-- ******************************************************
+
+PRINT 'Loading StaffRating'
+INSERT INTO StaffRating(RatingID, StaffID, StaffRating)
+SELECT TOP 100
+	cr.RatingID, ABS(CHECKSUM(NEWID())) % 180 + 1, ABS(CHECKSUM(NEWID())) % 10 + 1
+FROM CustomerRating cr, Staff s
+ORDER BY NEWID();
+
+
+-- ******************************************************
+
+-- Online access for customers who bought food online
+PRINT 'Loading OnlineAccess'
+INSERT INTO OnlineAccess(CustID, StartDateTime, EndDateTime)
+SELECT DISTINCT o.CustID, DATEADD(minute, -10, o.OrderDateTime), DATEADD(minute, 5, o.OrderDateTime)
+FROM [Order] o
+WHERE o.OrderType = 'D'
+ORDER BY o.CustID
+
+-- ******************************************************
+
+-- Check row count
+CREATE TABLE #counts
+(
+    table_name varchar(255),
+    row_count int
+)
+EXEC sp_MSForEachTable @command1='INSERT #counts (table_name, row_count) SELECT ''?'', COUNT(*) FROM ?'
+SELECT table_name, row_count FROM #counts ORDER BY row_count DESC
+DROP TABLE #counts
