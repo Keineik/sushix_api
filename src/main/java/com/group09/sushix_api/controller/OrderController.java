@@ -8,10 +8,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.repository.query.Param;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/order")
@@ -20,6 +20,25 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class OrderController {
     OrderService orderService;
+
+    @GetMapping
+    ApiResponse<Map<String, Object>> fetchOrders(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "18") Integer limit,
+            @RequestParam(defaultValue = "") String searchTerm,
+            @RequestParam(defaultValue = "0") Integer branchId,
+            @RequestParam(defaultValue = "0") Integer custId,
+            @RequestParam(defaultValue = "") String orderStatus,
+            @RequestParam(defaultValue = "") String orderType,
+            @RequestParam(defaultValue = "false") Boolean sortDirection
+    ) {
+        Map<String, Object> result = orderService.fetchOrders(
+                page, limit, searchTerm, branchId, custId, orderStatus, orderType, sortDirection
+        );
+        return ApiResponse.<Map<String, Object>>builder()
+                .result(result)
+                .build();
+    }
 
     @GetMapping("/dine-in/{orderId}")
     ApiResponse<DineInOrderResponse> getDineInOrder(@PathVariable("orderId") Integer orderId) {

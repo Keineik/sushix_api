@@ -269,6 +269,7 @@ GO
 CREATE OR ALTER PROC usp_FetchOrders_count
 	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
 	@BranchID INT = 0, -- Filter by Branch
+	@CustID INT = 0,
 	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
 	@OrderType CHAR(1) = '', -- Filter by OrderType ('D' for DeliveryOrder, 'I' for DineInOrder)
 	@Count INT OUT
@@ -276,7 +277,6 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
-
 	SELECT @Count = COUNT(DISTINCT o.OrderID)
 	FROM [Order] o
 	JOIN Customer c ON o.CustID = c.CustID
@@ -286,6 +286,7 @@ BEGIN
 	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
+		AND (@CustID = 0 OR c.CustID = @CustID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
 		AND (@OrderType = '' OR 
 			(@OrderType = 'Delivery' AND do.OrderID IS NOT NULL) OR 
@@ -915,7 +916,6 @@ go
 CREATE OR ALTER PROC InsertStaff
     @DeptName VARCHAR(10),
     @BranchID INT,
-    @IsBranchManager BIT = 0,    
     @StaffName NVARCHAR(100),
     @StaffDOB DATE,
     @StaffGender CHAR(1)            
@@ -928,8 +928,8 @@ BEGIN TRY
     DECLARE @NewStaffID INT = SCOPE_IDENTITY();
 
     -- Insert into Staff table
-    INSERT INTO Staff (StaffID, DeptName, BranchID, IsBranchManager)
-    VALUES (@NewStaffID, @DeptName, @BranchID, @IsBranchManager);
+    INSERT INTO Staff (StaffID, DeptName, BranchID)
+    VALUES (@NewStaffID, @DeptName, @BranchID);
 
     -- Insert into StaffInfo table
     INSERT INTO StaffInfo (StaffID, StaffName, StaffDOB, StaffGender)
@@ -1136,7 +1136,7 @@ END;
 GO
 
 --17. Thống kê doanh thu theo từng món, món chạy nhất trong khoảng cụ thể theo chi nhánh, khu vực.
-CREATE PROCEDURE usp_GetItemSalesStats
+CREATE OR ALTER PROCEDURE usp_GetItemSalesStats
     @BranchID INT = 0,          -- 0 for all branches
     @Region NVARCHAR(50) = '',   -- '' for all regions, N'Thành Phố Hồ Chính Minh', N'Hà Nội'
     @TimePeriod INT = 0,            -- Days. 0: All time

@@ -1,5 +1,6 @@
 package com.group09.sushix_api.repository;
 
+import com.group09.sushix_api.dto.InvoiceDTO;
 import com.group09.sushix_api.entity.Invoice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.query.Procedure;
@@ -21,7 +22,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
     );
 
     @Procedure(procedureName = "usp_FetchInvoices")
-    List<Invoice> fetchInvoices(
+    List<InvoiceDTO> fetchInvoices(
             @Param("Page") Integer page,
             @Param("Limit") Integer limit,
             @Param("SearchTerm") String searchTerm,
@@ -29,5 +30,13 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
             @Param("StartDate") String startDate,
             @Param("EndDate") String endDate,
             @Param("SortDirection") Boolean sortDirection
+    );
+
+    @Procedure(procedureName = "usp_FetchInvoices_count")
+    Integer fetchInvoicesCount(
+            @Param("SearchTerm") String searchTerm,
+            @Param("BranchID") Integer branchId,
+            @Param("StartDate") String startDate,
+            @Param("EndDate") String endDate
     );
 }
