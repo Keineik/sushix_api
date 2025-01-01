@@ -49,14 +49,6 @@ public class MembershipCardController {
                 .build();
     }
 
-    @PutMapping("/{cardId}")
-    ApiResponse<MembershipCardResponse> updateMembershipCard(@PathVariable("cardId") Integer cardId,
-                                                             @RequestBody @Valid MembershipCardRequest request) {
-        return ApiResponse.<MembershipCardResponse>builder()
-                .result(membershipCardService.updateMembershipCard(cardId, request))
-                .build();
-    }
-
     @DeleteMapping("/{cardId}")
     ApiResponse<String> deleteMembershipCard(@PathVariable Integer cardId) {
         membershipCardService.deleteMembershipCard(cardId);

@@ -3,6 +3,7 @@ package com.group09.sushix_api.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -20,21 +21,21 @@ public class MembershipCard {
     @Column(name = "CardID")
     Integer cardId;
 
-    @Column(name = "IssuedDate", nullable = false)
+    @Column(name = "IssuedDate", insertable = false)
     Instant issuedDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CardType", referencedColumnName = "CardTypeID", nullable = false)
+    @JoinColumn(name = "CardType", insertable = false)
     CardType cardType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CustID", referencedColumnName = "CustID", nullable = false)
+    @JoinColumn(name = "CustID")
     Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "StaffID", referencedColumnName = "StaffID", nullable = false)
+    @JoinColumn(name = "StaffID")
     Staff staff;
 
-    @Column(name = "Points", nullable = false)
+    @Column(name = "Points", insertable = false)
     Integer points;
 }

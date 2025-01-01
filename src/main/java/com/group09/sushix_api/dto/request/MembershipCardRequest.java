@@ -11,7 +11,6 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MembershipCardRequest {
-    Integer cardTypeId;
     Integer custId;
-    Instant issuedDate;
 }
+

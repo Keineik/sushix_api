@@ -188,7 +188,7 @@ CREATE TABLE CardType (
 CREATE TABLE MembershipCard (
     CardID INT IDENTITY(1,1) PRIMARY KEY,
     IssuedDate DATE DEFAULT GETDATE(),
-    CardType INT NOT NULL,
+    CardType INT DEFAULT 1,
     CustID INT NOT NULL,
 	StaffID INT NOT NULL,
 	Points INT DEFAULT 0,

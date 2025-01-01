@@ -12,7 +12,7 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MembershipCardResponse {
     Integer cardId;
-    Instant issuedDate;
+    String issuedDate;
     Integer cardTypeId;
     Integer custId;
     Integer staffId;
