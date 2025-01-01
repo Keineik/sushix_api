@@ -73,6 +73,10 @@ GO
 USE $(DatabaseName);
 GO
 
+-- ****************************************
+-- Create Tables
+-- ****************************************
+
 CREATE TABLE MenuCategory (
     CategoryID INT IDENTITY(1,1) PRIMARY KEY,
     CategoryName NVARCHAR(100) NOT NULL
@@ -233,7 +237,7 @@ CREATE TABLE Reservation (
 );
 
 CREATE TABLE [Order] (
-	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
+	OrderID INT IDENTITY(1, 1),
 	OrderDateTime DATETIME DEFAULT GETDATE(),
 	OrderStatus CHAR(10) CHECK (OrderStatus IN (
 		'UNVERIFIED', 'VERIFIED', 'DELIVERED', 'COMPLETED', 'CANCELLED'
@@ -245,6 +249,7 @@ CREATE TABLE [Order] (
 		'D', 'I' -- D for DeliveryOrder, I for DineInOrder
 	)),
 
+	CONSTRAINT PK_Order PRIMARY KEY NONCLUSTERED (OrderID),
 	CONSTRAINT FK_Order_Customer FOREIGN KEY (CustID) REFERENCES Customer(CustID),
 	CONSTRAINT FK_Order_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID)
 );
@@ -309,7 +314,7 @@ CREATE TABLE Coupon (
 );
 
 CREATE TABLE Invoice(
-	InvoiceID INT IDENTITY(1, 1) PRIMARY KEY,
+	InvoiceID INT IDENTITY(1, 1),
 	OrderID INT NOT NULL,
 	Subtotal DECIMAL(19,4) NOT NULL,
 	DiscountRate DECIMAL(4,3) CHECK (DiscountRate BETWEEN 0 AND 1),
@@ -321,6 +326,7 @@ CREATE TABLE Invoice(
 	BranchID INT NOT NULL,
 	CustID INT NOT NULL,
 
+	CONSTRAINT PK_Invoice PRIMARY KEY NONCLUSTERED (InvoiceID),
 	CONSTRAINT FK_Invoice_Coupon FOREIGN KEY (CouponID) REFERENCES Coupon(CouponID),
 	CONSTRAINT FK_Invoice_Order FOREIGN KEY (OrderID) REFERENCES [Order](OrderID),
 	CONSTRAINT FK_Invoice_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
