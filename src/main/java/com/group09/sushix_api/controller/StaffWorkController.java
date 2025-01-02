@@ -2,16 +2,16 @@ package com.group09.sushix_api.controller;
 
 import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
-import com.group09.sushix_api.dto.response.ApiResponse;
-import com.group09.sushix_api.dto.response.DineInOrderResponse;
-import com.group09.sushix_api.dto.response.InvoiceResponse;
-import com.group09.sushix_api.dto.response.OrderResponse;
+import com.group09.sushix_api.dto.response.*;
+import com.group09.sushix_api.entity.RestaurantTable;
 import com.group09.sushix_api.service.StaffWorkService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/staff")
@@ -40,6 +40,13 @@ public class StaffWorkController {
     ApiResponse<InvoiceResponse> createInvoice(@RequestBody InvoiceCreationRequest request) {
         return ApiResponse.<InvoiceResponse>builder()
                 .result(staffWorkService.createInvoice(request))
+                .build();
+    }
+
+    @GetMapping("/table")
+    ApiResponse<List<RestaurantTableResponse>> getAllRestaurantTables() {
+        return ApiResponse.<List<RestaurantTableResponse>>builder()
+                .result(staffWorkService.getAllRestaurantTables())
                 .build();
     }
 

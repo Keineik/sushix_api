@@ -5,11 +5,13 @@ import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
 import com.group09.sushix_api.dto.response.DineInOrderResponse;
 import com.group09.sushix_api.dto.response.InvoiceResponse;
 import com.group09.sushix_api.dto.response.OrderResponse;
+import com.group09.sushix_api.dto.response.RestaurantTableResponse;
 import com.group09.sushix_api.entity.*;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.OrderDetailsMapper;
 import com.group09.sushix_api.mapper.OrderMapper;
+import com.group09.sushix_api.mapper.RestaurantTableMapper;
 import com.group09.sushix_api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -25,11 +28,12 @@ import java.util.Objects;
 public class StaffWorkService {
     OrderRepository orderRepository;
     AccountRepository accountRepository;
-
     OrderMapper orderMapper;
     InvoiceRepository invoiceRepository;
     OrderDetailsRepository orderDetailsRepository;
     OrderDetailsMapper orderDetailsMapper;
+    RestaurantTableRepository restaurantTableRepository;
+    RestaurantTableMapper restaurantTableMapper;
 
     InvoiceService invoiceService;
 
@@ -95,6 +99,15 @@ public class StaffWorkService {
         );
 
         return invoiceService.getInvoice(invoiceId);
+    }
+
+    public List<RestaurantTableResponse> getAllRestaurantTables() {
+        Staff staff = getStaffFromAuth();
+        return restaurantTableRepository
+                .getRestaurantTableByBranchID(staff.getDepartment().getBranch().getBranchId())
+                .stream()
+                .map(restaurantTableMapper::toRestaurantTableResponse)
+                .toList();
     }
 
     private Staff getStaffFromAuth() {
