@@ -317,13 +317,31 @@ BEGIN
         i.PaymentMethod,
         i.ShippingCost,
         i.Subtotal,
+        i.TaxRate,
+        i.DiscountRate,
+        i.CouponID,
+        (i.Subtotal * (1 - ISNULL(ct.DiscountRate, 0)) - 
+            CASE 
+                WHEN i.CouponID IS NULL THEN 0
+                WHEN cp.DiscountFlat IS NOT NULL THEN ISNULL(cp.DiscountFlat, 0)
+                WHEN cp.DiscountRate IS NOT NULL THEN 
+                    CASE 
+                        WHEN (i.DiscountRate * i.Subtotal) > ISNULL(cp.MaxDiscount, 0) 
+                        THEN ISNULL(cp.MaxDiscount, 0)
+                        ELSE i.DiscountRate * i.Subtotal
+                    END
+                ELSE 0 
+            END
+        + ISNULL(i.ShippingCost, 0)) * (1 + ISNULL(i.TaxRate, 0)) AS Total,
         c.CustName,
         c.CustPhoneNumber,
         c.CustEmail
     FROM Invoice i
     JOIN [Order] o ON i.OrderID = o.OrderID
     JOIN Customer c ON o.CustID = c.CustID
-    LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
+    LEFT JOIN Coupon cp ON cp.CouponID = i.CouponID
+    LEFT JOIN MembershipCard m ON m.CustID = c.CustID
+    LEFT JOIN CardType ct ON ct.CardTypeID = m.CardType
     WHERE 
         (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search 
          OR c.CustName LIKE @Search 
@@ -331,27 +349,12 @@ BEGIN
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
         AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
         AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
-    GROUP BY 
-        i.InvoiceID,
-        i.OrderID,
-        i.InvoiceDate,
-        i.PaymentMethod,
-        i.ShippingCost,
-		i.Subtotal,
-        c.CustName,
-        c.CustPhoneNumber,
-        c.CustEmail
     ORDER BY 
-        CASE 
-            WHEN @SortDirection = 0 THEN ISNULL(SUM(od.UnitPrice * od.Quantity), 0)
-        END ASC,
-        CASE 
-            WHEN @SortDirection = 1 THEN ISNULL(SUM(od.UnitPrice * od.Quantity), 0)
-        END DESC
+        CASE WHEN @SortDirection = 0 THEN i.InvoiceDate END ASC,
+        CASE WHEN @SortDirection = 1 THEN i.InvoiceDate END DESC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
-
-GO 
+GO
 
 CREATE OR ALTER PROC usp_FetchInvoices_count
 	@SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
