@@ -53,4 +53,11 @@ public class OrderController {
                 .result(orderService.getDeliveryOrder(orderId))
                 .build();
     }
+
+    @GetMapping("{orderId}")
+    ApiResponse<Object> getOrder(@PathVariable("orderId") Integer orderId) {
+        return ApiResponse.<Object>builder()
+                .result(orderService.getOrder(orderId))
+                .build();
+    }
 }

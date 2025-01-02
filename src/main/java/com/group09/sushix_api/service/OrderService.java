@@ -114,4 +114,17 @@ public class OrderService {
                         .toList())
                 .build();
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Object getOrder(Integer orderId) {
+        try {
+            return getDineInOrder(orderId);
+        } catch (Exception e) {
+            try {
+                return getDeliveryOrder(orderId);
+            } catch (Exception ex) {
+                throw new AppException(ErrorCode.OBJECT_NOT_EXISTED);
+            }
+        }
+    }
 }
