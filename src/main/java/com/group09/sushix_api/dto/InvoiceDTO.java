@@ -6,7 +6,7 @@ import java.time.Instant;
 public interface InvoiceDTO {
     Integer getInvoiceId();
     Integer getOrderId();
-    Instant getInvoiceDate();
+    String getInvoiceDate();
     String getPaymentMethod();
     BigDecimal getShippingCost();
     BigDecimal getSubtotal();

@@ -300,8 +300,8 @@ CREATE OR ALTER PROC usp_FetchInvoices
     @Limit INT = 18, 
     @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
     @BranchID INT = 0, -- Filter by BranchID
-    @StartDate DATE = NULL, -- Filter by Start Date
-    @EndDate DATE = NULL, -- Filter by End Date
+    @StartDate DATE = '', -- Filter by Start Date
+    @EndDate DATE = '', -- Filter by End Date
     @SortDirection BIT = 0 -- 0: ASC, 1: DESC
 AS
 BEGIN
@@ -348,8 +348,8 @@ BEGIN
          OR c.CustName LIKE @Search 
          OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
-        AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
-        AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
+        AND (@StartDate = '' OR i.InvoiceDate >= @StartDate)
+        AND (@EndDate = '' OR i.InvoiceDate <= @EndDate)
     ORDER BY 
         CASE WHEN @SortDirection = 0 THEN i.InvoiceDate END ASC,
         CASE WHEN @SortDirection = 1 THEN i.InvoiceDate END DESC
@@ -360,8 +360,8 @@ GO
 CREATE OR ALTER PROC usp_FetchInvoices_count
 	@SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
     @BranchID INT = 0, -- Filter by BranchID
-    @StartDate DATE = NULL, -- Filter by Start Date
-    @EndDate DATE = NULL, -- Filter by End Date
+    @StartDate DATE = '', -- Filter by Start Date
+    @EndDate DATE = '', -- Filter by End Date
 	@Count INT OUT
 AS
 BEGIN
@@ -378,8 +378,8 @@ BEGIN
          OR c.CustName LIKE @Search 
          OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
-        AND (@StartDate IS NULL OR i.InvoiceDate >= @StartDate)
-        AND (@EndDate IS NULL OR i.InvoiceDate <= @EndDate)
+        AND (@StartDate = '' OR i.InvoiceDate >= @StartDate)
+        AND (@EndDate = '' OR i.InvoiceDate <= @EndDate)
 END;
 
 GO
