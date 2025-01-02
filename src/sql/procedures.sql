@@ -324,7 +324,7 @@ BEGIN
         i.InvoiceDate,
         i.PaymentMethod,
         i.ShippingCost,
-        ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS TotalPrice,
+        i.Subtotal,
         c.CustName,
         c.CustPhoneNumber,
         c.CustEmail
