@@ -333,6 +333,7 @@ BEGIN
                 ELSE 0 
             END
         + ISNULL(i.ShippingCost, 0)) * (1 + ISNULL(i.TaxRate, 0)) AS Total,
+		c.CustID,
         c.CustName,
         c.CustPhoneNumber,
         c.CustEmail
