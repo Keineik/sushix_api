@@ -13,7 +13,7 @@ create or alter proc usp_FetchItems
     @CategoryID int = 0, -- Filter
     @BranchID int = 0, -- Filter
 	@FilterShippable bit = 0, --0: no filter, 1: yes XD
-    @SortKey varchar(10) = 'ID', -- 'price' or 'ID'
+    @SortKey varchar(10) = '', -- 'price' or 'ID'
     @SortDirection bit = 0 -- 0: asc, 1: desc
 as
 begin
@@ -37,11 +37,13 @@ begin
 		and (@FilterShippable = 0 or bmi.IsShippable = 1)
 	group by mi.ItemID, mi.ItemName, mi.UnitPrice, mi.ServingUnit, mi.CategoryID, mi.SoldQuantity, mi.IsDiscontinued, mi.ImgUrl
 	order by 
+	case when @SortDirection = '' then (select 1) end,
     case when @SortKey = 'price' AND @SortDirection = 0 then UnitPrice end,
     case when @SortKey = 'ID' AND @SortDirection = 0 then mi.ItemID end,
     case when @SortKey = 'price' AND @SortDirection = 1 then UnitPrice end desc,
     case when @SortKey = 'ID' AND @SortDirection = 1 then mi.ItemID end desc
     offset @Offset rows fetch next @Limit rows only
+	OPTION(RECOMPILE)
 end;
 
 GO
@@ -256,7 +258,8 @@ BEGIN
     CASE 
         WHEN @SortKey = 'OrderDateTime' AND @SortDirection = 1 THEN o.OrderDateTime
     END DESC
-	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+	OPTION(RECOMPILE);
 END
 GO
 exec usp_FetchOrders
@@ -308,7 +311,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @Offset INT = (@Page - 1) * @Limit;
-    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
     SELECT 
         i.InvoiceID,
@@ -367,7 +370,7 @@ CREATE OR ALTER PROC usp_FetchInvoices_count
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Search NVARCHAR(100) = '%' + @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
 
     SELECT @Count = COUNT(DISTINCT i.InvoiceID)
     FROM Invoice i
@@ -391,13 +394,13 @@ GO
 CREATE OR ALTER PROC usp_FetchCustomers
     @Page INT = 1,
     @Limit INT = 18,
-    @SearchTerm NVARCHAR(100) = '' 
+    @SearchTerm NVARCHAR(255) = '' 
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @Offset INT = (@Page - 1) * @Limit;
-    DECLARE @Search NVARCHAR(100) = @SearchTerm + '%';
+    DECLARE @Search NVARCHAR(255) = @SearchTerm + '%';
 
     SELECT 
         CustID,
@@ -407,9 +410,10 @@ BEGIN
         CustPhoneNumber,
         CustCitizenID
     FROM Customer
-    WHERE (CAST(CustID AS NVARCHAR) LIKE @Search OR CustName LIKE @Search)
+    WHERE (CustName LIKE @Search)
     ORDER BY (SELECT 1)
-	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+	OPTION(RECOMPILE)
 END;
 GO
 
@@ -1193,7 +1197,8 @@ BEGIN
         CASE 
             WHEN @SortKey = 'Quantity' AND @SortDirection = 1 THEN SUM(OD.Quantity)
             WHEN @SortKey = 'Revenue' AND @SortDirection = 1 THEN SUM(OD.Quantity * OD.UnitPrice)
-        END DESC;
+        END DESC
+	OPTION(RECOMPILE);
 END;
 
 GO

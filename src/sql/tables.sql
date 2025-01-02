@@ -162,7 +162,7 @@ CREATE TABLE WorkHistory (
 
 CREATE TABLE Customer (
     CustID INT IDENTITY(1,1) PRIMARY KEY,
-    CustName VARCHAR(255) NOT NULL,
+    CustName NVARCHAR(255) NOT NULL,
     CustEmail VARCHAR(255),
     CustGender CHAR(1) CHECK (CustGender IN ('M', 'F')),
     CustPhoneNumber VARCHAR(20),
