@@ -39,4 +39,7 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CustID", nullable = false, referencedColumnName = "CustID")
     Customer customer;
+
+    @Column(name = "RsStatus", nullable = false, insertable = false)
+    String rsStatus;
 }

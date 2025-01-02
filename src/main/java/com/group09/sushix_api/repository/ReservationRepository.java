@@ -25,6 +25,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
             @Param("Page") Integer page,
             @Param("Limit") Integer limit,
             @Param("SearchTerm") String searchTerm,
+            @Param("Status") String status,
             @Param("BranchID") Integer branchId,
             @Param("SortDirection") Boolean sortDirection
     );
@@ -32,6 +33,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     @Procedure(procedureName = "usp_FetchReservations_count")
     Integer fetchReservationsCount(
             @Param("SearchTerm") String searchTerm,
+            @Param("Status") String status,
             @Param("BranchID") Integer branchId
     );
 }
