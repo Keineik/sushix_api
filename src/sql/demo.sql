@@ -1,10 +1,10 @@
---1. Non-clustered Index cho MenuItem(ItemName) 
+﻿--1. Non-clustered Index cho MenuItem(ItemName) 
 CREATE NONCLUSTERED INDEX IX_MenuItem_ItemName
 ON MenuItem(ItemName);
 
 DROP INDEX IX_MenuItem_ItemName ON MenuItem;
 
-exec usp_FetchItems @SearchTerm = 'B�nh'
+exec usp_FetchItems @SearchTerm = 'Bánh'
 
 --2. Non-clustered Index cho Customer(CustName)
 CREATE NONCLUSTERED INDEX IX_Customer_CustName
@@ -34,7 +34,10 @@ DROP INDEX IX_OrderDetails_ItemID_Include_Quantity_UnitPrice ON [OrderDetails]
 CREATE NONCLUSTERED INDEX IX_Invoice_CustID
 ON Invoice(CustID);
 
-DROP INDEX IX_Invoice_CustID ON Invoice
+CREATE NONCLUSTERED INDEX IX_Customer_CustPhoneNumber
+ON Customer(CustPhoneNumber);
+
+DROP INDEX IX_Customer_CustPhoneNumber ON Customer
 
 exec usp_FetchInvoices @SearchTerm = 'Winnie'
 
@@ -47,3 +50,18 @@ DROP INDEX IX_Order_StaffID ON [Order]
 
 exec usp_FetchOrders @OrderStatus = 'COMPLETED'
 -- cooked
+
+select * from [Order] o left join Invoice i on o.OrderID = i.OrderID
+where i.InvoiceID is null and o.OrderStatus != 'COMPLETED' and o.OrderStatus != 'CANCELLED'
+--92131, 72280, 20189, 101895, 93359, 100329, 61626, 10763, 87557
+
+declare @id int
+
+exec usp_CreateInvoice @OrderID = 100813, @PaymentMethod = N'Tiền mặt', @TaxRate = 0.1, @CouponCode = '', @InvoiceID = @id output
+
+delete from Invoice
+where InvoiceID = @id
+
+update [Order]
+set OrderStatus = 'DELIVERED'
+where OrderID = 100813

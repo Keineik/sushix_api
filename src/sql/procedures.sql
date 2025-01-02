@@ -316,7 +316,7 @@ BEGIN
     SELECT 
         i.InvoiceID,
         i.OrderID,
-		o.BranchID,
+		i.BranchID,
         i.InvoiceDate,
         i.PaymentMethod,
         i.ShippingCost,
@@ -324,7 +324,7 @@ BEGIN
         i.TaxRate,
         i.DiscountRate,
         i.CouponID,
-        (i.Subtotal * (1 - ISNULL(ct.DiscountRate, 0)) -
+        (i.Subtotal * (1 - ISNULL(i.DiscountRate, 0)) -
             CASE 
                 WHEN i.CouponID IS NULL THEN 0
                 WHEN cp.DiscountFlat IS NOT NULL THEN ISNULL(cp.DiscountFlat, 0)
@@ -342,16 +342,12 @@ BEGIN
         c.CustPhoneNumber,
         c.CustEmail
     FROM Invoice i
-    JOIN [Order] o ON i.OrderID = o.OrderID
-    JOIN Customer c ON o.CustID = c.CustID
+    JOIN Customer c ON i.CustID = c.CustID
     LEFT JOIN Coupon cp ON cp.CouponID = i.CouponID
-    LEFT JOIN MembershipCard m ON m.CustID = c.CustID
-    LEFT JOIN CardType ct ON ct.CardTypeID = m.CardType
     WHERE 
-        (CAST(i.InvoiceID AS NVARCHAR) LIKE @Search 
-         OR c.CustName LIKE @Search 
-         OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
-        AND (@BranchID = 0 OR o.BranchID = @BranchID)
+        (c.CustName LIKE @Search 
+         OR c.CustPhoneNumber LIKE @Search)
+        AND (@BranchID = 0 OR i.BranchID = @BranchID)
         AND (@StartDate = '' OR (CAST(i.InvoiceDate AS DATE) >= @StartDate))
         AND (@EndDate = '' OR (CAST(i.InvoiceDate AS DATE) <= @EndDate))
     ORDER BY 
@@ -1087,7 +1083,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Validate @GroupBy input
     IF @GroupBy NOT IN ('day', 'month', 'quarter', 'year')
     BEGIN
         RAISERROR('Invalid value for @GroupBy. Valid options are day, month, quarter, year.', 16, 1);
