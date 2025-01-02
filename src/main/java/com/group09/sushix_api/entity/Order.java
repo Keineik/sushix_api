@@ -24,7 +24,7 @@ public class Order {
     @Column(name = "OrderDateTime")
     Instant orderDateTime;
 
-    @Column(name = "OrderStatus", length = 50)
+    @Column(name = "OrderStatus")
     String orderStatus;
 
     @ManyToOne

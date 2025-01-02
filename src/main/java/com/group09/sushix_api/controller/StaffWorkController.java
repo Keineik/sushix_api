@@ -5,7 +5,7 @@ import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
 import com.group09.sushix_api.dto.response.ApiResponse;
 import com.group09.sushix_api.dto.response.DineInOrderResponse;
 import com.group09.sushix_api.dto.response.InvoiceResponse;
-import com.group09.sushix_api.entity.Invoice;
+import com.group09.sushix_api.dto.response.OrderResponse;
 import com.group09.sushix_api.service.StaffWorkService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +40,14 @@ public class StaffWorkController {
     ApiResponse<InvoiceResponse> createInvoice(@RequestBody InvoiceCreationRequest request) {
         return ApiResponse.<InvoiceResponse>builder()
                 .result(staffWorkService.createInvoice(request))
+                .build();
+    }
+
+    @PutMapping("/order/{orderId}")
+    ApiResponse<OrderResponse> updateOrderStatus(@PathVariable("orderId") Integer orderId,
+                                                 @RequestParam("orderStatus") String orderStatus) {
+        return ApiResponse.<OrderResponse>builder()
+                .result(staffWorkService.updateOrderStatus(orderId, orderStatus))
                 .build();
     }
 }
