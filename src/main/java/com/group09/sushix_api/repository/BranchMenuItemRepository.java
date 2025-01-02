@@ -11,10 +11,10 @@ public interface BranchMenuItemRepository extends JpaRepository<BranchMenuItem, 
     @NativeQuery("SELECT * FROM BranchMenuItem WHERE BranchID = :branchId")
     List<BranchMenuItem> getAllBranchMenuItems(Integer branchId);
 
-    @NativeQuery("SELECT * FROM BranchMenuItem WHERE BranchID = :branchID AND ItemID = :itemId")
+    @NativeQuery("SELECT * FROM BranchMenuItem WHERE BranchID = :branchId AND ItemID = :itemId")
     BranchMenuItem getBranchMenuItem(Integer branchId, Integer itemId);
 
     @Modifying
-    @NativeQuery("DELETE BranchMenuItem WHERE BranchID = :branchID AND ItemID = :itemId")
+    @NativeQuery("DELETE BranchMenuItem WHERE BranchID = :branchId AND ItemID = :itemId")
     void deleteBranchMenuItem(Integer branchId, Integer itemId);
 }

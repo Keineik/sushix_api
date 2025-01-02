@@ -82,6 +82,7 @@ public class StaffWorkController {
 
     @DeleteMapping("branch-menu-item/{itemId}")
     ApiResponse<String> deleteBranchMenuItem(@PathVariable("itemId") Integer itemId) {
+        staffWorkService.deleteBranchMenuItem(itemId);
         return ApiResponse.<String>builder()
                 .result("Deleted menu item from branch")
                 .build();

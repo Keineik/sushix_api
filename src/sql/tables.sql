@@ -119,11 +119,12 @@ CREATE TABLE Department (
 );
 
 CREATE TABLE BranchMenuItem (
+	BmiID INT IDENTITY(1,1) PRIMARY KEY,
     BranchID INT,
     ItemID INT,
     IsShippable BIT,
 
-    CONSTRAINT PK_BranchMenuItem PRIMARY KEY (BranchID, ItemID),
+    CONSTRAINT PK_BranchMenuItem UNIQUE (BranchID, ItemID),
     CONSTRAINT FK_BranchMenuItem_Branch FOREIGN KEY (BranchID) REFERENCES Branch(BranchID),
     CONSTRAINT FK_BranchMenuItem_MenuItem FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID)
 );

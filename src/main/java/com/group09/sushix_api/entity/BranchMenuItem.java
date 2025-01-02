@@ -15,6 +15,8 @@ import lombok.experimental.FieldDefaults;
 public class BranchMenuItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Integer bmiId;
+
     @Column(name = "BranchID", nullable = false)
     Integer branchId;
 

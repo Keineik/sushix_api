@@ -120,6 +120,7 @@ public class StaffWorkService {
                 .toList();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public BranchMenuItemResponse createBranchMenuItem(BranchMenuItemRequest request) {
         Staff staff = getStaffFromAuth();
         BranchMenuItem branchMenuItem = branchMenuItemMapper.toBranchMenuItem(request);
@@ -129,6 +130,7 @@ public class StaffWorkService {
                         .save(branchMenuItem));
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public BranchMenuItemResponse updateBranchMenuItem(Integer itemId, BranchMenuItemRequest request) {
         Staff staff = getStaffFromAuth();
         BranchMenuItem branchMenuItem = null;
@@ -147,14 +149,11 @@ public class StaffWorkService {
                         .save(branchMenuItem));
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void deleteBranchMenuItem(Integer itemId) {
         Staff staff = getStaffFromAuth();
-        try {
-            branchMenuItemRepository
-                    .deleteBranchMenuItem(staff.getDepartment().getBranch().getBranchId(), itemId);
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.OBJECT_NOT_EXISTED);
-        }
+        branchMenuItemRepository
+                .deleteBranchMenuItem(staff.getDepartment().getBranch().getBranchId(), itemId);
     }
 
     private Staff getStaffFromAuth() {
@@ -165,7 +164,7 @@ public class StaffWorkService {
         Integer accountId = Integer.valueOf(auth.getName());
         Account account = accountRepository
                 .findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         var staff = account.getStaff();
         if (staff == null)
