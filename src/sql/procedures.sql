@@ -139,6 +139,7 @@ CREATE OR ALTER PROC usp_FetchReservations
 	@Page INT = 1,
 	@Limit INT = 18,
 	@SearchTerm NVARCHAR(100) = '', -- ReservationID
+	@Status NVARCHAR(30) = '', --'' for all. 'Confirmed' or 'Not Confirmed' or 'Cancelled'
 	@BranchID INT = 0, -- Filter
 	@SortDirection BIT = 0 -- 0: asc, 1: desc
 AS
@@ -162,8 +163,8 @@ BEGIN
 	JOIN Customer c ON r.CustID = c.CustID
 	WHERE (r.RsID LIKE @Search OR  (c.CustName LIKE @Search) 
          OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
-	
 		AND (@BranchID = 0 OR r.BranchID = @BranchID)
+		AND (@Status = '' OR r.RsStatus = @Status)
 	ORDER BY 
     CASE WHEN @SortDirection = 0 THEN r.RsDateTime END,
     CASE WHEN @SortDirection = 1 THEN r.RsDateTime END DESC
@@ -172,9 +173,9 @@ END
 
 GO
 
-
 CREATE OR ALTER PROC usp_FetchReservations_count
 	@SearchTerm NVARCHAR(100) = '', -- ReservationID
+	@Status NVARCHAR(30) = '', --'' for all. 'Confirmed' or 'Not Confirmed' or 'Cancelled'
 	@BranchID INT = 0, -- Filter
 	@Count INT OUT
 AS
@@ -185,8 +186,10 @@ BEGIN
 	SELECT @Count= COUNT(DISTINCT(r.RsID))
 	FROM Reservation r
 	JOIN Customer c ON r.CustID = c.CustID
-	WHERE (r.RsID LIKE @Search)
+	WHERE (r.RsID LIKE @Search OR  (c.CustName LIKE @Search) 
+         OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
 		AND (@BranchID = 0 OR r.BranchID = @BranchID)
+		AND (@Status = '' OR r.RsStatus = @Status)
 END
 GO
 

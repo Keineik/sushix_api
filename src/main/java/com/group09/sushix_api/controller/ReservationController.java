@@ -1,15 +1,13 @@
 package com.group09.sushix_api.controller;
 
 import com.group09.sushix_api.dto.response.ApiResponse;
+import com.group09.sushix_api.dto.response.ReservationResponse;
 import com.group09.sushix_api.service.ReservationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -26,6 +24,7 @@ public class ReservationController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "18") Integer limit,
             @RequestParam(defaultValue = "") String searchTerm,
+            @RequestParam(defaultValue = "") String status,
             @RequestParam(defaultValue = "0") Integer branchId,
             @RequestParam(defaultValue = "false") Boolean sortDirection
     ) {
@@ -33,12 +32,20 @@ public class ReservationController {
                 page,
                 limit,
                 searchTerm,
+                status,
                 branchId,
                 sortDirection
         );
 
         return ApiResponse.<Map<String, Object>>builder()
                 .result(result)
+                .build();
+    }
+
+    @GetMapping("/{reservationId}")
+    ApiResponse<ReservationResponse> getReservation(@PathVariable("reservationId") Integer reservationId) {
+        return ApiResponse.<ReservationResponse>builder()
+                .result(reservationService.getReservation(reservationId))
                 .build();
     }
 }
