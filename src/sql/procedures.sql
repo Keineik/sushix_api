@@ -324,7 +324,7 @@ BEGIN
         i.TaxRate,
         i.DiscountRate,
         i.CouponID,
-        (i.Subtotal * (1 - ISNULL(ct.DiscountRate, 0)) - 
+        (i.Subtotal * (1 - ISNULL(ct.DiscountRate, 0)) -
             CASE 
                 WHEN i.CouponID IS NULL THEN 0
                 WHEN cp.DiscountFlat IS NOT NULL THEN ISNULL(cp.DiscountFlat, 0)
@@ -357,7 +357,8 @@ BEGIN
     ORDER BY 
         CASE WHEN @SortDirection = 0 THEN i.InvoiceDate END ASC,
         CASE WHEN @SortDirection = 1 THEN i.InvoiceDate END DESC
-    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+	OPTION(RECOMPILE);
 END;
 GO
 
@@ -1078,40 +1079,47 @@ GO
 
 --16. Thống kê doanh thu theo ngày/tháng/quý/năm cho một chi nhánh cụ thể hoặc cho toàn công ty.
 CREATE OR ALTER PROCEDURE usp_GetRevenueStats
-    @BranchID INT = 0,       -- 0 = all
-    @GroupBy NVARCHAR(10) = 'day' -- 'day', 'month', 'quarter', 'year'
+    @BranchID INT = 0,            -- 0 = all
+    @GroupBy VARCHAR(10) = 'day', -- 'day', 'month', 'quarter', 'year'
+    @StartDate VARCHAR(10) = '', -- YYYY-MM-DD, '' defaults to epoch start
+    @EndDate VARCHAR(10) = ''    -- YYYY-MM-DD, '' defaults to today
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Validate @GroupBy input
     IF @GroupBy NOT IN ('day', 'month', 'quarter', 'year')
     BEGIN
         RAISERROR('Invalid value for @GroupBy. Valid options are day, month, quarter, year.', 16, 1);
         RETURN;
     END
 
-    -- Get range
-    DECLARE @StartDate DATE, @EndDate DATE;
-    SET @EndDate = GETDATE();
+    DECLARE @ActualStartDate DATE, @ActualEndDate DATE;
 
-    IF @GroupBy = 'day'
+    SET @ActualStartDate = 
+        CASE 
+            WHEN @StartDate = '' THEN '1900-01-01' -- Epoch start
+            ELSE TRY_CAST(@StartDate AS DATE)
+        END;
+
+    SET @ActualEndDate = 
+        CASE 
+            WHEN @EndDate = '' THEN CAST(GETDATE() AS DATE) -- Today
+            ELSE TRY_CAST(@EndDate AS DATE)
+        END;
+
+    IF @ActualStartDate IS NULL OR @ActualEndDate IS NULL
     BEGIN
-        SET @StartDate = DATEFROMPARTS(YEAR(@EndDate), MONTH(@EndDate), 1); -- Day 1 of current month
-    END
-    ELSE IF @GroupBy = 'month'
-    BEGIN
-        SET @StartDate = DATEFROMPARTS(YEAR(@EndDate), 1, 1); -- 1/1/x
-    END
-    ELSE IF @GroupBy = 'quarter'
-    BEGIN
-        SET @StartDate = DATEFROMPARTS(YEAR(@EndDate), 1, 1); -- 1/1/x
-    END
-    ELSE IF @GroupBy = 'year'
-    BEGIN
-        SET @StartDate = '1900-01-01'; -- All data
+        RAISERROR('Invalid date format for @StartDate or @EndDate. Use YYYY-MM-DD.', 16, 1);
+        RETURN;
     END
 
-    -- Return format
+    IF @ActualStartDate > @ActualEndDate
+    BEGIN
+        RAISERROR('Invalid date range: @StartDate must be earlier than or equal to @EndDate.', 16, 1);
+        RETURN;
+    END
+
     DECLARE @GroupByFormat NVARCHAR(20);
     SET @GroupByFormat = 
         CASE @GroupBy
@@ -1129,7 +1137,7 @@ BEGIN
     FROM Invoice
     WHERE 
         (BranchID = @BranchID OR @BranchID = 0) AND
-        (InvoiceDate >= @StartDate AND InvoiceDate <= @EndDate)
+        (InvoiceDate >= @ActualStartDate AND InvoiceDate <= @ActualEndDate)
     GROUP BY 
         FORMAT(InvoiceDate, @GroupByFormat)
     ORDER BY 
@@ -1149,28 +1157,25 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Validate TimePeriod input
     IF @TimePeriod < 0
     BEGIN
         RAISERROR('Invalid value for @TimePeriod.', 16, 1);
         RETURN;
     END;
 
-    -- Validate SortKey input
     IF @SortKey NOT IN ('Quantity', 'Revenue')
     BEGIN
         RAISERROR('Invalid value for @SortKey. Use ''Quantity'' or ''Revenue''.', 16, 1);
         RETURN;
     END;
 
-    -- Determine date range based on TimePeriod
     DECLARE @StartDate DATE, @EndDate DATE;
     SET @EndDate = GETDATE();
 
     IF @TimePeriod = 0
-        SET @StartDate = '1900-01-01'; -- All time
+        SET @StartDate = '1900-01-01';
     ELSE
-        SET @StartDate = DATEADD(DAY, -@TimePeriod, @EndDate); -- Subtract days based on @TimePeriod
+        SET @StartDate = DATEADD(DAY, -@TimePeriod, @EndDate);
 
     -- Calculate item sales statistics
     SELECT TOP(@Limit) 

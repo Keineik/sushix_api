@@ -29,3 +29,21 @@ ON OrderDetails(ItemID) INCLUDE (Quantity, UnitPrice);
 DROP INDEX IX_OrderDetails_ItemID_Include_Quantity_UnitPrice ON [OrderDetails]
 
 --Cooked
+
+-- 5. Non-clustered Index cho Invoice(CustID)
+CREATE NONCLUSTERED INDEX IX_Invoice_CustID
+ON Invoice(CustID);
+
+DROP INDEX IX_Invoice_CustID ON Invoice
+
+exec usp_FetchInvoices @SearchTerm = 'Winnie'
+
+-- 8.
+CREATE NONCLUSTERED INDEX IX_Order_StaffID
+ON [Order](StaffID)
+WHERE StaffID IS NOT NULL;
+
+DROP INDEX IX_Order_StaffID ON [Order]
+
+exec usp_FetchOrders @OrderStatus = 'COMPLETED'
+-- cooked
