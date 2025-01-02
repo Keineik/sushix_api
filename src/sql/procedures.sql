@@ -142,6 +142,7 @@ CREATE OR ALTER PROC usp_FetchReservations
 	@Limit INT = 18,
 	@SearchTerm NVARCHAR(100) = '', -- ReservationID
 	@Status NVARCHAR(30) = '', --'' for all. 'Confirmed' or 'Not Confirmed' or 'Cancelled'
+	@CustID INT = 0,
 	@BranchID INT = 0, -- Filter
 	@SortDirection BIT = 0 -- 0: asc, 1: desc
 AS
@@ -163,14 +164,16 @@ BEGIN
 		c.CustEmail
 	FROM Reservation r
 	JOIN Customer c ON r.CustID = c.CustID
-	WHERE (r.RsID LIKE @Search OR  (c.CustName LIKE @Search) 
+	WHERE (r.RsID LIKE @Search OR (c.CustName LIKE @Search) 
          OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
 		AND (@BranchID = 0 OR r.BranchID = @BranchID)
+		AND (@CustID = 0 OR r.CustID = @CustID)
 		AND (@Status = '' OR r.RsStatus = @Status)
 	ORDER BY 
     CASE WHEN @SortDirection = 0 THEN r.RsDateTime END,
     CASE WHEN @SortDirection = 1 THEN r.RsDateTime END DESC
-	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+	OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+	OPTION(RECOMPILE);
 END
 
 GO
@@ -303,6 +306,7 @@ CREATE OR ALTER PROC usp_FetchInvoices
     @Limit INT = 18, 
     @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name
     @BranchID INT = 0, -- Filter by BranchID
+	@CustID INT = 0,
     @StartDate DATE = '', -- Filter by Start Date
     @EndDate DATE = '', -- Filter by End Date
     @SortDirection BIT = 0 -- 0: ASC, 1: DESC
@@ -348,6 +352,7 @@ BEGIN
         (c.CustName LIKE @Search 
          OR c.CustPhoneNumber LIKE @Search)
         AND (@BranchID = 0 OR i.BranchID = @BranchID)
+		AND (@CustID = 0 OR c.CustID = @CustID)
         AND (@StartDate = '' OR (CAST(i.InvoiceDate AS DATE) >= @StartDate))
         AND (@EndDate = '' OR (CAST(i.InvoiceDate AS DATE) <= @EndDate))
     ORDER BY 
