@@ -1121,7 +1121,7 @@ BEGIN
     SELECT 
         FORMAT(InvoiceDate, @GroupByFormat) AS RevenuePeriod,
         ISNULL(@BranchID, 0) AS Branch,
-        SUM(Subtotal - (Subtotal * DiscountRate / 100) + ShippingCost + (Subtotal * TaxRate / 100)) AS TotalRevenue
+        SUM(Subtotal) AS TotalRevenue
     FROM Invoice
     WHERE 
         (BranchID = @BranchID OR @BranchID = 0) AND
@@ -1135,10 +1135,12 @@ GO
 
 --17. Thống kê doanh thu theo từng món, món chạy nhất trong khoảng cụ thể theo chi nhánh, khu vực.
 CREATE OR ALTER PROCEDURE usp_GetItemSalesStats
-    @BranchID INT = 0,          -- 0 for all branches
-    @Region NVARCHAR(50) = '',   -- '' for all regions, N'Thành Phố Hồ Chính Minh', N'Hà Nội'
-    @TimePeriod INT = 0,            -- Days. 0: All time
-	@SortDirection BIT = 0
+    @BranchID INT = 0,           -- 0 for all branches
+    @Region NVARCHAR(50) = '',   -- '' for all regions, e.g., N'Thành Phố Hồ Chính Minh', N'Hà Nội'
+    @TimePeriod INT = 0,         -- Days. 0: All time
+    @Limit INT = 10,             -- Number of results to fetch
+    @SortDirection BIT = 0,      -- 0: ASC, 1: DESC
+    @SortKey NVARCHAR(20) = 'Revenue' -- 'Quantity' or 'Revenue'
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -1148,7 +1150,14 @@ BEGIN
     BEGIN
         RAISERROR('Invalid value for @TimePeriod.', 16, 1);
         RETURN;
-    END
+    END;
+
+    -- Validate SortKey input
+    IF @SortKey NOT IN ('Quantity', 'Revenue')
+    BEGIN
+        RAISERROR('Invalid value for @SortKey. Use ''Quantity'' or ''Revenue''.', 16, 1);
+        RETURN;
+    END;
 
     -- Determine date range based on TimePeriod
     DECLARE @StartDate DATE, @EndDate DATE;
@@ -1160,24 +1169,33 @@ BEGIN
         SET @StartDate = DATEADD(DAY, -@TimePeriod, @EndDate); -- Subtract days based on @TimePeriod
 
     -- Calculate item sales statistics
-	SELECT 
-	    MI.ItemID,
-	    MI.ItemName,
-	    ISNULL(@BranchID, 0) AS Branch,
-	    SUM(OD.Quantity) AS TotalSoldQuantity,
-	    SUM(OD.Quantity * OD.UnitPrice) AS TotalRevenue
-	FROM OrderDetails OD
-	JOIN MenuItem MI ON OD.ItemID = MI.ItemID
-	JOIN [Order] O ON OD.OrderID = O.OrderID
-	JOIN Branch B ON B.BranchID = O.BranchID
+    SELECT TOP(@Limit) 
+        MI.ItemID,
+        MI.ItemName,
+        ISNULL(@BranchID, 0) AS Branch,
+        SUM(OD.Quantity) AS TotalSoldQuantity,
+        SUM(OD.Quantity * OD.UnitPrice) AS TotalRevenue
+    FROM OrderDetails OD
+    JOIN MenuItem MI ON OD.ItemID = MI.ItemID
+    JOIN [Order] O ON OD.OrderID = O.OrderID
+    JOIN Branch B ON B.BranchID = O.BranchID
     WHERE 
         (O.BranchID = @BranchID OR @BranchID = 0) AND
-        (B.BranchRegion = @Region OR @Region ='') AND
+        (B.BranchRegion = @Region OR @Region = '') AND
         (O.OrderDateTime >= @StartDate AND O.OrderDateTime <= @EndDate)
     GROUP BY 
         MI.ItemID, MI.ItemName
-    ORDER BY TotalRevenue DESC
+    ORDER BY 
+        CASE 
+            WHEN @SortKey = 'Quantity' AND @SortDirection = 0 THEN SUM(OD.Quantity)
+            WHEN @SortKey = 'Revenue' AND @SortDirection = 0 THEN SUM(OD.Quantity * OD.UnitPrice)
+        END ASC,
+        CASE 
+            WHEN @SortKey = 'Quantity' AND @SortDirection = 1 THEN SUM(OD.Quantity)
+            WHEN @SortKey = 'Revenue' AND @SortDirection = 1 THEN SUM(OD.Quantity * OD.UnitPrice)
+        END DESC;
 END;
+
 GO
 
 GO
