@@ -222,7 +222,7 @@ CREATE TABLE Reservation (
 	RsNotes NVARCHAR(2047),
 	BranchID INT NOT NULL,
 	CustID INT NOT NULL,
-	RsStatus CHAR(15) CHECK (RsStatus IN (
+	RsStatus VARCHAR(15) CHECK (RsStatus IN (
 		'Not Confirmed', 'Cancelled', 'Confirmed'
 	)) DEFAULT 'Not Confirmed',
 
