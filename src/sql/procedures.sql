@@ -298,7 +298,7 @@ GO
 CREATE OR ALTER PROC usp_FetchInvoices
     @Page INT = 1, 
     @Limit INT = 18, 
-    @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name, or Phone Number
+    @SearchTerm NVARCHAR(100) = '', -- Search by InvoiceID, Customer Name
     @BranchID INT = 0, -- Filter by BranchID
     @StartDate DATE = '', -- Filter by Start Date
     @EndDate DATE = '', -- Filter by End Date
@@ -313,6 +313,7 @@ BEGIN
     SELECT 
         i.InvoiceID,
         i.OrderID,
+		o.BranchID,
         i.InvoiceDate,
         i.PaymentMethod,
         i.ShippingCost,
@@ -348,8 +349,8 @@ BEGIN
          OR c.CustName LIKE @Search 
          OR CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
         AND (@BranchID = 0 OR o.BranchID = @BranchID)
-        AND (@StartDate = '' OR i.InvoiceDate >= @StartDate)
-        AND (@EndDate = '' OR i.InvoiceDate <= @EndDate)
+        AND (@StartDate = '' OR (CAST(i.InvoiceDate AS DATE) >= @StartDate))
+        AND (@EndDate = '' OR (CAST(i.InvoiceDate AS DATE) <= @EndDate))
     ORDER BY 
         CASE WHEN @SortDirection = 0 THEN i.InvoiceDate END ASC,
         CASE WHEN @SortDirection = 1 THEN i.InvoiceDate END DESC
