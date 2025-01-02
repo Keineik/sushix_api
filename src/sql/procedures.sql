@@ -204,7 +204,7 @@ CREATE OR ALTER PROC usp_FetchOrders
 	@SearchTerm NVARCHAR(100) = '', -- Search by OrderID
 	@BranchID INT = 0, -- Filter by Branch
 	@CustID INT = 0,
-	@OrderStatus NVARCHAR(50) = '', -- Filter by OrderStatus
+	@OrderStatus NVARCHAR(10) = '', -- Filter by OrderStatus
 	@OrderType NVARCHAR(10) = '', -- Filter by OrderType ('Dine-In', 'Delivery')
 	@SortKey NVARCHAR(20) = 'OrderDateTime', -- Sort by OrderDateTime/EstimatedPrice
 	@SortDirection BIT = 0 -- 0: asc, 1: desc
@@ -224,36 +224,28 @@ BEGIN
 		c.CustName,
 		c.CustPhoneNumber,
 		c.CustEmail,
-		CASE 
-			WHEN do.OrderID IS NOT NULL THEN 'Delivery'
-			WHEN dio.OrderID IS NOT NULL THEN 'Dine-In'
-			ELSE 'Unknown'
-		END AS OrderType,
+		IIF(o.orderType = 'D', 'Delivery', 'Dine-In'),
 		ISNULL(SUM(od.UnitPrice * od.Quantity), 0) AS EstimatedPrice
 	FROM [Order] o
 	JOIN Customer c ON o.CustID = c.CustID
-	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
-	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
-        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+	WHERE ((o.OrderID LIKE @Search) 
+		OR (c.CustName LIKE @Search) 
+        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@CustID = 0 OR c.CustID = @CustID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
-		AND (@OrderType = '' OR 
-			(@OrderType = 'Delivery' AND do.OrderID IS NOT NULL) OR 
-			(@OrderType = 'Dine-In' AND dio.OrderID IS NOT NULL))
+		AND (@OrderType = '' OR @OrderType = o.OrderType)
 	GROUP BY 
 		o.OrderID,
 		o.OrderDateTime,
 		o.OrderStatus,
 		o.BranchID,
+		o.OrderType,
 		c.CustID,
 		c.CustName,
 		c.CustPhoneNumber,
-		c.CustEmail,
-		do.OrderID,
-		dio.OrderID
+		c.CustEmail
 	ORDER BY 
     CASE 
         WHEN @SortKey = 'OrderDateTime' AND @SortDirection = 0 THEN o.OrderDateTime
@@ -280,17 +272,14 @@ BEGIN
 	SELECT @Count = COUNT(DISTINCT o.OrderID)
 	FROM [Order] o
 	JOIN Customer c ON o.CustID = c.CustID
-	LEFT JOIN DeliveryOrder do ON o.OrderID = do.OrderID
-	LEFT JOIN DineInOrder dio ON o.OrderID = dio.OrderID
 	LEFT JOIN OrderDetails od ON o.OrderID = od.OrderID
-	WHERE (o.OrderID LIKE @Search) OR (c.CustName LIKE @Search) 
-        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search)
+	WHERE ((o.OrderID LIKE @Search) 
+		OR (c.CustName LIKE @Search) 
+        OR (CAST(c.CustPhoneNumber AS NVARCHAR) LIKE @Search))
 		AND (@BranchID = 0 OR o.BranchID = @BranchID)
 		AND (@CustID = 0 OR c.CustID = @CustID)
 		AND (@OrderStatus = '' OR o.OrderStatus = @OrderStatus)
-		AND (@OrderType = '' OR 
-			(@OrderType = 'Delivery' AND do.OrderID IS NOT NULL) OR 
-			(@OrderType = 'Dine-In' AND dio.OrderID IS NOT NULL))
+		AND (@OrderType = '' OR @OrderType = o.OrderType)
 END
 
 
@@ -345,6 +334,7 @@ BEGIN
         i.InvoiceDate,
         i.PaymentMethod,
         i.ShippingCost,
+		i.Subtotal,
         c.CustName,
         c.CustPhoneNumber,
         c.CustEmail
@@ -1212,6 +1202,44 @@ BEGIN TRY
 		UPDATE OnlineAccess SET EndDateTime = GETDATE()
 		WHERE AccessID = @AccessID;
 	END
+
+	COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	IF @@trancount > 0 ROLLBACK TRANSACTION;
+	;THROW
+END CATCH
+END
+GO
+
+GO
+
+-- 19. Nhân viên xác nhận đơn đặt món hoặc hủy đơn
+CREATE OR ALTER PROCEDURE usp_updateOrderStatus (
+	@OrderID INT,
+	@StaffID INT,
+	@OrderStatus CHAR(10)
+)
+AS
+BEGIN
+BEGIN TRY
+	SET XACT_ABORT, NOCOUNT ON;
+	
+	DECLARE @CurrentOrderStatus CHAR(10) = (
+		SELECT OrderStatus FROM [Order] WITH (UPDLOCK, HOLDLOCK) WHERE OrderID = @OrderID)
+	IF (@CurrentOrderStatus = @OrderStatus)
+		THROW 51000, N'There was no change in order status', 1;
+	IF (@CurrentOrderStatus IN ('COMPLETED', 'CANCELLED'))
+		THROW 51000, N'Order status cannot be changed anymore since it is already completed or cancelled', 1;
+	IF (@OrderStatus = 'UNVERIFIED')
+		THROW 51000, N'Staff cannot set order to unverified', 1;
+	IF (@OrderStatus = 'COMPLETED')
+		THROW 51000, N'Order cannot be completed manually but through creating invoice', 1;
+	IF (@CurrentOrderStatus = 'SERVED' AND @OrderStatus != 'CANCELLED')
+		THROW 51000, N'Served order cannot be revert back to previous status', 1;
+	
+	UPDATE [Order] SET OrderStatus = @OrderStatus
+	WHERE OrderID = @OrderID;
 
 	COMMIT TRANSACTION;
 END TRY

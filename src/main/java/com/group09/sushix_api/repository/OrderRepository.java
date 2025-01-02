@@ -62,4 +62,11 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Modifying
     @NativeQuery(value = "DELETE FROM [Order] WHERE OrderID = :orderId")
     void myDeleteById(Integer orderId);
+
+    @Procedure(procedureName = "usp_updateOrderStatus")
+    void updateOrderStatus (
+            @Param("OrderID") Integer orderId,
+            @Param("StaffID") Integer staffId,
+            @Param("OrderStatus") String orderStatus
+    );
 }

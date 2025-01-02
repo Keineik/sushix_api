@@ -4,6 +4,7 @@ import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
 import com.group09.sushix_api.dto.response.DineInOrderResponse;
 import com.group09.sushix_api.dto.response.InvoiceResponse;
+import com.group09.sushix_api.dto.response.OrderResponse;
 import com.group09.sushix_api.entity.*;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
@@ -74,6 +75,15 @@ public class StaffWorkService {
                                                  DineInOrderCreationRequest request) {
         orderRepository.myDeleteById(orderId);
         return createDineInOrder(request);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public OrderResponse updateOrderStatus(Integer orderId, String orderStatus) {
+        Staff staff = getStaffFromAuth();
+        orderRepository.updateOrderStatus(orderId, staff.getStaffId(), orderStatus);
+        return orderMapper.toOrderResponse(orderRepository
+                .findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED)));
     }
 
     public InvoiceResponse createInvoice(InvoiceCreationRequest request) {

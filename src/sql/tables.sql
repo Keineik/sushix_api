@@ -233,7 +233,7 @@ CREATE TABLE Reservation (
 CREATE TABLE [Order] (
 	OrderID INT IDENTITY(1, 1),
 	OrderDateTime DATETIME DEFAULT GETDATE(),
-	OrderStatus CHAR(10) CHECK (OrderStatus IN (
+	OrderStatus VARCHAR(10) CHECK (OrderStatus IN (
 		'UNVERIFIED', 'VERIFIED', 'DELIVERED', 'COMPLETED', 'CANCELLED'
 	)),
 	StaffID INT,
