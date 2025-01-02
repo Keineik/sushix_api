@@ -1,14 +1,13 @@
 package com.group09.sushix_api.service;
 
+import com.group09.sushix_api.dto.request.BranchMenuItemRequest;
 import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
-import com.group09.sushix_api.dto.response.DineInOrderResponse;
-import com.group09.sushix_api.dto.response.InvoiceResponse;
-import com.group09.sushix_api.dto.response.OrderResponse;
-import com.group09.sushix_api.dto.response.RestaurantTableResponse;
+import com.group09.sushix_api.dto.response.*;
 import com.group09.sushix_api.entity.*;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
+import com.group09.sushix_api.mapper.BranchMenuItemMapper;
 import com.group09.sushix_api.mapper.OrderDetailsMapper;
 import com.group09.sushix_api.mapper.OrderMapper;
 import com.group09.sushix_api.mapper.RestaurantTableMapper;
@@ -34,8 +33,10 @@ public class StaffWorkService {
     OrderDetailsMapper orderDetailsMapper;
     RestaurantTableRepository restaurantTableRepository;
     RestaurantTableMapper restaurantTableMapper;
+    BranchMenuItemMapper branchMenuItemMapper;
 
     InvoiceService invoiceService;
+    BranchMenuItemRepository branchMenuItemRepository;
 
     @Transactional(rollbackFor = Exception.class)
     public DineInOrderResponse createDineInOrder(DineInOrderCreationRequest request) {
@@ -108,6 +109,52 @@ public class StaffWorkService {
                 .stream()
                 .map(restaurantTableMapper::toRestaurantTableResponse)
                 .toList();
+    }
+
+    public List<BranchMenuItemResponse> getAllBranchMenuItems() {
+        Staff staff = getStaffFromAuth();
+        return branchMenuItemRepository
+                .getAllBranchMenuItems(staff.getDepartment().getBranch().getBranchId())
+                .stream()
+                .map(branchMenuItemMapper::toBranchMenuItemResponse)
+                .toList();
+    }
+
+    public BranchMenuItemResponse createBranchMenuItem(BranchMenuItemRequest request) {
+        Staff staff = getStaffFromAuth();
+        BranchMenuItem branchMenuItem = branchMenuItemMapper.toBranchMenuItem(request);
+        branchMenuItem.setBranchId(staff.getDepartment().getBranch().getBranchId());
+        return branchMenuItemMapper
+                .toBranchMenuItemResponse(branchMenuItemRepository
+                        .save(branchMenuItem));
+    }
+
+    public BranchMenuItemResponse updateBranchMenuItem(Integer itemId, BranchMenuItemRequest request) {
+        Staff staff = getStaffFromAuth();
+        BranchMenuItem branchMenuItem = null;
+        try {
+            branchMenuItem = branchMenuItemRepository.getBranchMenuItem(
+                    staff.getDepartment().getBranch().getBranchId(),
+                    itemId
+            );
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.OBJECT_NOT_EXISTED);
+        }
+        branchMenuItem.setIsShippable(request.getIsShippable());
+
+        return branchMenuItemMapper
+                .toBranchMenuItemResponse(branchMenuItemRepository
+                        .save(branchMenuItem));
+    }
+
+    public void deleteBranchMenuItem(Integer itemId) {
+        Staff staff = getStaffFromAuth();
+        try {
+            branchMenuItemRepository
+                    .deleteBranchMenuItem(staff.getDepartment().getBranch().getBranchId(), itemId);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.OBJECT_NOT_EXISTED);
+        }
     }
 
     private Staff getStaffFromAuth() {

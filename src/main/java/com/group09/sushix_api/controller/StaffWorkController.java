@@ -1,9 +1,9 @@
 package com.group09.sushix_api.controller;
 
+import com.group09.sushix_api.dto.request.BranchMenuItemRequest;
 import com.group09.sushix_api.dto.request.DineInOrderCreationRequest;
 import com.group09.sushix_api.dto.request.InvoiceCreationRequest;
 import com.group09.sushix_api.dto.response.*;
-import com.group09.sushix_api.entity.RestaurantTable;
 import com.group09.sushix_api.service.StaffWorkService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +55,35 @@ public class StaffWorkController {
                                                  @RequestParam("orderStatus") String orderStatus) {
         return ApiResponse.<OrderResponse>builder()
                 .result(staffWorkService.updateOrderStatus(orderId, orderStatus))
+                .build();
+    }
+
+    @GetMapping("/branch-menu-item")
+    ApiResponse<List<BranchMenuItemResponse>> getAllBranchMenuItems() {
+        return ApiResponse.<List<BranchMenuItemResponse>>builder()
+                .result(staffWorkService.getAllBranchMenuItems())
+                .build();
+    }
+
+    @PostMapping("branch-menu-item")
+    ApiResponse<BranchMenuItemResponse> createBranchMenuItem(@RequestBody BranchMenuItemRequest request) {
+        return ApiResponse.<BranchMenuItemResponse>builder()
+                .result(staffWorkService.createBranchMenuItem(request))
+                .build();
+    }
+
+    @PutMapping("branch-menu-item/{itemId}")
+    ApiResponse<BranchMenuItemResponse> updateBranchMenuItem(@PathVariable("itemId") Integer itemId,
+                                                             @RequestBody BranchMenuItemRequest request) {
+        return ApiResponse.<BranchMenuItemResponse>builder()
+                .result(staffWorkService.updateBranchMenuItem(itemId, request))
+                .build();
+    }
+
+    @DeleteMapping("branch-menu-item/{itemId}")
+    ApiResponse<String> deleteBranchMenuItem(@PathVariable("itemId") Integer itemId) {
+        return ApiResponse.<String>builder()
+                .result("Deleted menu item from branch")
                 .build();
     }
 }
