@@ -31,11 +31,12 @@ public class ReservationService {
             Integer limit,
             String searchTerm,
             String status,
+            Integer custId,
             Integer branchId,
             Boolean sortDirection
     ) {
         List<ReservationsDTO> items = reservationRepository.fetchReservations(
-                page, limit, searchTerm, status, branchId, sortDirection);
+                page, limit, searchTerm, status, custId, branchId, sortDirection);
         Integer totalCount = reservationRepository.fetchReservationsCount(searchTerm, status, branchId);
 
         Map<String, Object> result = new HashMap<>();

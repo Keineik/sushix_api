@@ -35,6 +35,7 @@ public class InvoiceService {
             Integer limit,
             String searchTerm,
             Integer branchId,
+            Integer custId,
             String startDate,
             String endDate,
             Boolean sortDirection
@@ -44,6 +45,7 @@ public class InvoiceService {
                 limit,
                 searchTerm,
                 branchId,
+                custId,
                 startDate,
                 endDate,
                 sortDirection
