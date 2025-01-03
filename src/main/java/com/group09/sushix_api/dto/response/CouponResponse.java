@@ -22,6 +22,6 @@ public class CouponResponse {
     LocalDate effectiveDate;
     LocalDate expiryDate;
     Integer totalUsageLimit;
-    Integer RemainingUsage;
+    Integer remainingUsage;
     Integer minMembershipRequirement;
 }
