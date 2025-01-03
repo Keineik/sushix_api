@@ -44,6 +44,7 @@ public class OrderService {
             Integer custId,
             String orderStatus,
             String orderType,
+            String sortKey,
             Boolean sortDirection
     ) {
         List<OrderDTO> items = orderRepository.fetchOrders(
@@ -54,6 +55,7 @@ public class OrderService {
                 custId,
                 orderStatus,
                 orderType,
+                sortKey,
                 sortDirection
         );
         Integer totalCount = orderRepository.fetchOrdersCount(

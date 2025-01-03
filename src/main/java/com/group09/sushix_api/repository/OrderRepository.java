@@ -23,6 +23,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             @Param("CustID") Integer custId,
             @Param("OrderStatus") String orderStatus,
             @Param("OrderType") String orderType,
+            @Param("SortKey") String sortKey,
             @Param("SortDirection") Boolean sortDirection
     );
 

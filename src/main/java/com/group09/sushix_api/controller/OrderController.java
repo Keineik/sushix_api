@@ -30,10 +30,11 @@ public class OrderController {
             @RequestParam(defaultValue = "0") Integer custId,
             @RequestParam(defaultValue = "") String orderStatus,
             @RequestParam(defaultValue = "") String orderType,
-            @RequestParam(defaultValue = "false") Boolean sortDirection
+            @RequestParam(defaultValue = "OrderDateTime") String sortKey,
+            @RequestParam(defaultValue = "1") Boolean sortDirection
     ) {
         Map<String, Object> result = orderService.fetchOrders(
-                page, limit, searchTerm, branchId, custId, orderStatus, orderType, sortDirection
+                page, limit, searchTerm, branchId, custId, orderStatus, orderType, sortKey, sortDirection
         );
         return ApiResponse.<Map<String, Object>>builder()
                 .result(result)
