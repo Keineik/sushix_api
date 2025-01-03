@@ -34,5 +34,7 @@ public class ReservationRequest {
 
     Integer custId;
 
+    String rsStatus;
+
     Set<OrderDetailsRequest> orderDetails;
 }

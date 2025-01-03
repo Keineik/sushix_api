@@ -1,5 +1,6 @@
 package com.group09.sushix_api.controller;
 
+import com.group09.sushix_api.dto.request.ReservationRequest;
 import com.group09.sushix_api.dto.response.ApiResponse;
 import com.group09.sushix_api.dto.response.ReservationResponse;
 import com.group09.sushix_api.service.ReservationService;
@@ -43,9 +44,25 @@ public class ReservationController {
     }
 
     @GetMapping("/{reservationId}")
-    ApiResponse<ReservationResponse> getReservation(@PathVariable("reservationId") Integer reservationId) {
+    ApiResponse<ReservationResponse> getReservation(@PathVariable("reservationId") Integer rsId) {
         return ApiResponse.<ReservationResponse>builder()
-                .result(reservationService.getReservation(reservationId))
+                .result(reservationService.getReservation(rsId))
+                .build();
+    }
+
+    @PutMapping("/{reservationId}")
+    ApiResponse<ReservationResponse> updateReservation(@PathVariable("reservationId") Integer rsId,
+                                                       @RequestBody ReservationRequest request) {
+        return ApiResponse.<ReservationResponse>builder()
+                .result(reservationService.updateReservation(rsId, request))
+                .build();
+    }
+
+    @DeleteMapping("/{reservationId}")
+    ApiResponse<String> deleteReservation(@PathVariable("reservationId") Integer rsId) {
+        reservationService.deleteReservation(rsId);
+        return ApiResponse.<String>builder()
+                .result("Successfully deleted reservation")
                 .build();
     }
 }

@@ -2,7 +2,9 @@ package com.group09.sushix_api.service;
 
 
 import com.group09.sushix_api.dto.ReservationsDTO;
+import com.group09.sushix_api.dto.request.ReservationRequest;
 import com.group09.sushix_api.dto.response.ReservationResponse;
+import com.group09.sushix_api.entity.Reservation;
 import com.group09.sushix_api.exception.AppException;
 import com.group09.sushix_api.exception.ErrorCode;
 import com.group09.sushix_api.mapper.ReservationMapper;
@@ -43,11 +45,25 @@ public class ReservationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ReservationResponse getReservation(Integer reservationId) {
+    public ReservationResponse getReservation(Integer rsId) {
         return reservationMapper.toReservationResponse(
                 reservationRepository
-                        .findById(reservationId)
+                        .findById(rsId)
                         .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED))
         );
+    }
+
+    public ReservationResponse updateReservation(Integer rsId, ReservationRequest request) {
+        Reservation reservation = reservationRepository
+                .findById(rsId)
+                .orElseThrow(() -> new AppException(ErrorCode.OBJECT_NOT_EXISTED));
+
+        reservationMapper.updateReservation(reservation, request);
+
+        return reservationMapper.toReservationResponse(reservationRepository.save(reservation));
+    }
+
+    public void deleteReservation(Integer rsId) {
+        reservationRepository.deleteById(rsId);
     }
 }
