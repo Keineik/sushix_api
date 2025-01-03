@@ -26,6 +26,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
             @Param("Limit") Integer limit,
             @Param("SearchTerm") String searchTerm,
             @Param("Status") String status,
+            @Param("CustID") Integer custId,
             @Param("BranchID") Integer branchId,
             @Param("SortDirection") Boolean sortDirection
     );

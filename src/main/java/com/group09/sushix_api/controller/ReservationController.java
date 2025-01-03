@@ -26,6 +26,7 @@ public class ReservationController {
             @RequestParam(defaultValue = "18") Integer limit,
             @RequestParam(defaultValue = "") String searchTerm,
             @RequestParam(defaultValue = "") String status,
+            @RequestParam(defaultValue = "0") Integer custId,
             @RequestParam(defaultValue = "0") Integer branchId,
             @RequestParam(defaultValue = "false") Boolean sortDirection
     ) {
@@ -34,6 +35,7 @@ public class ReservationController {
                 limit,
                 searchTerm,
                 status,
+                custId,
                 branchId,
                 sortDirection
         );

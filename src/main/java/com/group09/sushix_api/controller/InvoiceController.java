@@ -24,6 +24,7 @@ public class InvoiceController {
             @RequestParam(defaultValue = "18") Integer limit,
             @RequestParam(defaultValue = "") String searchTerm,
             @RequestParam(defaultValue = "0") Integer branchId,
+            @RequestParam(defaultValue = "0") Integer custId,
             @RequestParam(defaultValue = "") String startDate,
             @RequestParam(defaultValue = "") String endDate,
             @RequestParam(defaultValue = "false") Boolean sortDirection
@@ -33,6 +34,7 @@ public class InvoiceController {
                 limit,
                 searchTerm,
                 branchId,
+                custId,
                 startDate,
                 endDate,
                 sortDirection

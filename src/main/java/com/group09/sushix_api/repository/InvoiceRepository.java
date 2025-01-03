@@ -27,6 +27,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
             @Param("Limit") Integer limit,
             @Param("SearchTerm") String searchTerm,
             @Param("BranchID") Integer branchId,
+            @Param("CustID") Integer custId,
             @Param("StartDate") String startDate,
             @Param("EndDate") String endDate,
             @Param("SortDirection") Boolean sortDirection
