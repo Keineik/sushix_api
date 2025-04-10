@@ -1,92 +1,106 @@
-API for the sushi restaurant management and sale website project for advanced database course using spring boot
-# To-do list
-\#bietthehocDS
+# SushiX API
 
-## Report
-1. List of added derived attribute. (Priority)
-2. Denormalization (?)
-3. List all tables with primary key, foreign key, attribute data type (?)
-4. Physical design diagram. 
-5. Transaction analysis
-6. Index
-7. Partition (?)
-8. Experiment: Compare non-index and index (?)
+SushiX API is a robust backend solution for managing a sushi restaurant's operations, developed as part of an advanced database course. This project is built using **Spring Boot** for the backend and **TSQL** for database management, offering functionalities to handle reservations, orders, staff, inventory, and more.
 
-## Database script
-Priority
+---
 
-## Stored Procedures to Implement
+## Key Features
 
-### GET
-P/s: 1 stored procedure -> 1 table
-1. **Fetch Items**
-- Fetch items with pagination. 
-- Search by name, ItemID. (?)
-- Filter by BranchID, category. 
-- Sort by ID, price. 
+- **Comprehensive Restaurant Management**: Manage reservations, orders (dine-in and delivery), staff transfers, invoices, and branch statistics.
+- **RESTful Endpoints**: Provides a wide range of endpoints for CRUD operations, allowing seamless interaction with the system.
+- **Efficient Database Design**: Implements advanced database concepts such as indexing, partitioning, and transaction optimization to ensure high performance.
+- **Pagination and Filtering**: Fetch data with built-in pagination, search, and filtering capabilities for scalability and user convenience.
+- **Dynamic Statistics**: Generate branch-specific statistics, including revenue, order counts, and customer insights.
 
-2. **Fetch Staffs**
-- Fetch staffs with pagination. 
-- Search by StaffName and StaffID. 
-- Filter by BranchID, Deparment.
+---
 
-3. **Fetch Reservation**
-- Fetch reservations with pagination. 
-- JOIN with Customer table to get CustName, CustPhoneNumber, CustEmail. 
-- Search by ReservationID. 
-- Filter by BranchID. 
-- Sort by RsDatetime.
+## Technologies Used
 
-4. **Fetch Orders**
-- Fetch orders with pagination. 
-- JOIN with Customer table to get CustName, CustPhoneNumber, CustEmail. 
-- Search by OrderID. Filter by BranchID, OrderType (Dine-In and Delivery) and OrderStatus (e.g., Preparing, Out for Delivery, Delivered, Completed, Cancelled). 
-- Sort by OrderDateTime, estimated total price (Someone got a better name?) . 
+- **Backend Framework**: Java with Spring Boot
+- **Database**: Microsoft SQL Server with TSQL for writing stored procedures and database scripts
+- **Design Principles**: RESTful API design, MVC architecture, and advanced database normalization/denormalization techniques
 
-5. **Fetch Invoices**
-- Fetch invoices with pagination. 
-- JOIN with Customer table to get CustName, CustPhoneNumber, CustEmail. 
-- Search by InvoiceID. 
-- Filter by BranchID. 
-- Sort by total price.
+---
 
-6. **Fetch Customers**
-- Fetch customers with pagination. 
-- Search by Name or CustomerID (?). 
+## Installation and Setup
 
-7. **Fetch Coupons**
-- Fetch coupons with pagination. 
-- Search by ID, code. 
-- Filter by MinOrderValue, type of MinMembershipRequirement, Status(available/unavailable). 
-- Sort?
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Keineik/sushix_api.git
+   cd sushix_api
+   ```
 
-8. **Fetch statistics for a branch**
-- (e.g., number of orders, revenue, online accesss) I have no idea 
+2. **Set Up the Database**:
+   - Create a Microsoft SQL Server database.
+   - Run the provided TSQL scripts in the `database` directory to set up tables, stored procedures, and initial data.
 
-### INSERT
-9. **Add Reservation**
-- Add new reservation with a list of pre-ordered items
-10. **Add Delivery Order**
-- Add new delivery order with a list of ordered items
-11. **Add Dine-In Order**
-- Add new dine-in order with a list of ordered items
-12. **Issue an Invoice**
-- OrderID as a parameter. Change OrderStatus to Completed
-- Add new Invoice. Apply (best?) coupon. 
-- Update card points (if exists)
-- Mark table as "free".
-13. **Add new staff** (?)
+3. **Configure Application Properties**:
+   - Update the `application.properties` file in the `src/main/resources` directory with your database connection details:
+     ```properties
+     spring.datasource.url=jdbc:sqlserver://<your-database-url>:<port>;databaseName=<database-name>
+     spring.datasource.username=<your-database-username>
+     spring.datasource.password=<your-database-password>
+     ```
 
-### UPDATE
-14. **Transfer staff**
-- Update BranchID, Department.
-- Add work history.
-15. **Update Dine-In Order**
-- Update :)
-16. **Update Delivery Order**
-- Update :)
+4. **Run the Application**:
+   - Use Maven to build and start the server:
+     ```bash
+     mvn spring-boot:run
+     ```
 
-## Generate Data
-Look at the skill, look at move... Faker, WHAT WAS THAT?
+5. **Access the API**:
+   - The API will be available at `http://localhost:8080`.
 
-To be continued...
+---
+
+## API Endpoints Overview
+
+### Reservations
+- Create, update, and fetch reservations.
+- Includes customer details and pre-ordered items.
+
+### Orders
+- Manage dine-in and delivery orders.
+- Support for filters such as order type, status, and branch.
+
+### Staff
+- Add and transfer staff between branches.
+- Maintain a work history for staff members.
+
+### Customers
+- Fetch customer details with search and pagination.
+
+### Coupons
+- Manage and fetch available discount coupons.
+
+### Branch Statistics
+- Generate insights for a branch, including revenue and order metrics.
+
+---
+
+## Database Features
+
+- **Physical Design**: Includes optimized table schemas, primary keys, and foreign keys.
+- **Stored Procedures**: Implements stored procedures for fetching, inserting, and updating data.
+- **Performance Optimization**: Utilizes indexing, partitioning, and transaction management for efficient operations.
+
+---
+
+## Future Enhancements
+
+- Add automated testing for all endpoints.
+- Extend API documentation with examples for each endpoint.
+- Implement authentication and authorization for secure access.
+- Optimize database queries for even better performance.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and create a pull request with your changes. Ensure that your code adheres to the project's coding standards and is thoroughly tested.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
